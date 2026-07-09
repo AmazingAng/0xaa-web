@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ParticlePortrait from "./ParticlePortrait";
 
 type Particle = {
   x: number;
@@ -17,6 +18,7 @@ export default function Home() {
   const pulseRef = useRef(0);
   const pulseTimerRef = useRef<number | null>(null);
   const [isPulsing, setIsPulsing] = useState(false);
+  const [pulseSequence, setPulseSequence] = useState(0);
   const [signalState, setSignalState] = useState("LIVE // SYNCHRONIZED");
   const [clock, setClock] = useState("--:--:--");
 
@@ -167,6 +169,10 @@ export default function Home() {
     };
 
     const handlePointerMove = (event: PointerEvent) => {
+      if ((event.target as Element | null)?.closest?.("[data-particle-portrait]")) {
+        pointer.active = false;
+        return;
+      }
       pointer.x = event.clientX;
       pointer.y = event.clientY;
       pointer.active = true;
@@ -206,6 +212,7 @@ export default function Home() {
 
   const triggerPulse = useCallback(() => {
     pulseRef.current = 1;
+    setPulseSequence((sequence) => sequence + 1);
     setIsPulsing(true);
     setSignalState("SIGNAL // AMPLIFIED");
 
@@ -259,7 +266,11 @@ export default function Home() {
 
         <nav className="topnav" aria-label="页面导航">
           <a href="#signal">SIGNAL</a>
+          <a href="#work">WORK</a>
           <a href="#transmission">CHANNEL</a>
+          <a href="https://github.com/amazingang" target="_blank" rel="noreferrer">
+            GITHUB ↗
+          </a>
         </nav>
 
         <div className="connection-state" aria-label="站点在线">
@@ -273,7 +284,7 @@ export default function Home() {
           <div className="hero-copy">
             <p className="eyebrow">
               <span className="eyebrow-mark" aria-hidden="true" />
-              PERSONAL SIGNAL / 00
+              NEUROSCIENCE × WEB3 / 00
             </p>
             <h1 id="hero-heading">
               <span>0x</span>
@@ -282,12 +293,12 @@ export default function Home() {
               </span>
             </h1>
             <p className="hero-statement">
-              A SIGNAL FROM THE EDGE
+              THE NEURAL SIDE
               <br />
-              OF THE NETWORK.
+              OF WEB3.
             </p>
             <p className="hero-intro">
-              从网络边缘发出的个人信号。把灵感编译成界面，把噪声折叠成信号。
+              0xAA · 神经科学博士生 · 独立 Web3 教育者。把灵感编译成界面，把噪声折叠成信号。
             </p>
             <div className="hero-actions">
               <a className="button button-primary" href="#signal">
@@ -312,7 +323,7 @@ export default function Home() {
               <span className="orbit orbit-one" aria-hidden="true" />
               <span className="orbit orbit-two" aria-hidden="true" />
               <span className="portrait-coordinate coordinate-one" aria-hidden="true">
-                31°14′ / 121°28′
+                PKU / SINGAPORE
               </span>
               <span className="portrait-coordinate coordinate-two" aria-hidden="true">
                 NODE_0XAA
@@ -321,7 +332,7 @@ export default function Home() {
                 <span className="portrait-glitch portrait-cyan" aria-hidden="true" />
                 <span className="portrait-glitch portrait-pink" aria-hidden="true" />
                 <div className="portrait-screen">
-                  <img src="/0xaa.png" alt="0xaa 的黑白像素风头像" />
+                  <ParticlePortrait pulseSequence={pulseSequence} />
                   <span className="portrait-scan" aria-hidden="true" />
                   <span className="portrait-shine" aria-hidden="true" />
                 </div>
@@ -330,7 +341,7 @@ export default function Home() {
               </div>
               <div className="portrait-chip">
                 <span className="chip-dot" aria-hidden="true" />
-                IDENTITY // VERIFIED
+                PARTICLES // ASSEMBLED
               </div>
             </div>
           </div>
@@ -343,7 +354,7 @@ export default function Home() {
           </div>
           <div className="rail-item rail-item-center">
             <span>LOCATION</span>
-            <strong>CN / UTC+08</strong>
+            <strong>SG / UTC+08</strong>
           </div>
           <div className="rail-item rail-item-right">
             <span>LOCAL TIME</span>
@@ -371,10 +382,10 @@ export default function Home() {
           </div>
           <div className="signal-copy">
             <p>
-              这里记录实验、作品，以及那些还没有被定义的好奇心。不是档案馆，而是一台持续接收、不断重组的个人终端。
+              这里把神经科学、Web3 与开源教育收束成同一束信号：实验、作品，以及那些还没有被定义的好奇心。
             </p>
             <p className="signal-copy-en">
-              I compile sparks into interfaces and fold noise into signal. A place for work, experiments, and untimely curiosity.
+              I compile sparks into interfaces and fold noise into signal — across neuroscience, Web3, and open-source education.
             </p>
           </div>
         </div>
@@ -382,28 +393,83 @@ export default function Home() {
         <div className="protocol-grid">
           <article className="protocol-card protocol-card-cyan">
             <span className="protocol-number">/ 01</span>
-            <h3>CODE</h3>
-            <p>把模糊的念头写成可运行的东西。</p>
+            <h3>EDU</h3>
+            <p>把复杂的 Web3 知识压缩成人人可进入的开源教程。</p>
             <span className="protocol-mark" aria-hidden="true">
               &lt;/&gt;
             </span>
           </article>
           <article className="protocol-card protocol-card-magenta">
             <span className="protocol-number">/ 02</span>
-            <h3>NOISE</h3>
-            <p>在噪声里保留偏执、直觉与不合时宜。</p>
+            <h3>NEURO</h3>
+            <p>从神经科学出发，持续追问学习、智能与行为。</p>
             <span className="protocol-mark" aria-hidden="true">
               ~~~
             </span>
           </article>
           <article className="protocol-card protocol-card-neutral">
             <span className="protocol-number">/ 03</span>
-            <h3>SIGNAL</h3>
-            <p>让值得被看见的东西穿过屏幕抵达你。</p>
+            <h3>LABS</h3>
+            <p>在合约、零知识证明和新工具之间持续实验。</p>
             <span className="protocol-mark" aria-hidden="true">
               0x
             </span>
           </article>
+        </div>
+      </section>
+
+      <section className="work-section" id="work" aria-labelledby="work-heading">
+        <div className="section-tag">
+          <span>02</span>
+          <span>OPEN SOURCE SIGNALS</span>
+        </div>
+        <div className="work-header">
+          <div>
+            <p className="kicker">PINNED ON GITHUB / AMAZINGANG</p>
+            <h2 id="work-heading">THINGS THAT<br /><em>SHIP.</em></h2>
+          </div>
+          <a className="github-profile-link" href="https://github.com/amazingang" target="_blank" rel="noreferrer">
+            VISIT @AMAZINGANG <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+
+        <div className="repo-grid">
+          <a className="repo-card repo-card-featured" href="https://github.com/AmazingAng/WTF-Solidity" target="_blank" rel="noreferrer">
+            <div className="repo-card-topline">
+              <span>EDUCATION / WEB3</span>
+              <span>14K ★</span>
+            </div>
+            <h3>WTF-Solidity</h3>
+            <p>面向初学者的 Solidity 极简入门教程，也提供英文内容。</p>
+            <span className="repo-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a className="repo-card" href="https://github.com/WTFAcademy/WTF-Ethers" target="_blank" rel="noreferrer">
+            <div className="repo-card-topline">
+              <span>PINNED / ETHERS.JS</span>
+              <span>3.5K ★</span>
+            </div>
+            <h3>WTF-Ethers</h3>
+            <p>把 ethers.js 的细节拆解成可持续学习的 Web3 路线。</p>
+            <span className="repo-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a className="repo-card" href="https://github.com/WTFAcademy/WTF-zk" target="_blank" rel="noreferrer">
+            <div className="repo-card-topline">
+              <span>PINNED / ZK</span>
+              <span>2.1K ★</span>
+            </div>
+            <h3>WTF-zk</h3>
+            <p>一套面向实践者的零知识证明入门教程。</p>
+            <span className="repo-arrow" aria-hidden="true">↗</span>
+          </a>
+          <a className="repo-card repo-card-neuro" href="https://github.com/AmazingAng/WTF-DeepRL" target="_blank" rel="noreferrer">
+            <div className="repo-card-topline">
+              <span>RESEARCH / PYTORCH</span>
+              <span>DEEP RL</span>
+            </div>
+            <h3>WTF-DeepRL</h3>
+            <p>以 PyTorch 实现深度强化学习算法，让研究与构建相遇。</p>
+            <span className="repo-arrow" aria-hidden="true">↗</span>
+          </a>
         </div>
       </section>
 
@@ -445,10 +511,13 @@ export default function Home() {
 
       <footer className="footer">
         <span>© 0xAA / PERSONAL NODE</span>
+        <a href="https://github.com/amazingang" target="_blank" rel="noreferrer">
+          GITHUB @AMAZINGANG ↗
+        </a>
         <button type="button" onClick={triggerPulse}>
           REBOOT SIGNAL <span aria-hidden="true">↺</span>
         </button>
-        <span>NO TRACKERS. JUST STATIC.</span>
+        <span>NEUROSCIENCE × WEB3</span>
       </footer>
     </main>
   );

@@ -153,6 +153,7 @@ a {
 .topbar,
 .hero,
 .signal-section,
+.work-section,
 .transmission-section,
 .footer {
   position: relative;
@@ -454,36 +455,54 @@ p {
   clip-path: polygon(7% 0, 93% 0, 100% 7%, 100% 93%, 93% 100%, 7% 100%, 0 93%, 0 7%);
 }
 
-.portrait-screen img {
+.particle-portrait {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 51% 48%, rgba(var(--cyan-rgb), 0.08), transparent 54%);
+}
+
+.portrait-fallback,
+.portrait-particle-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.portrait-fallback {
   object-fit: cover;
   filter: grayscale(1) contrast(1.32) brightness(1.08);
   transform: scale(1.03);
+  transition: opacity 240ms ease;
+}
+
+.particle-portrait.is-ready .portrait-fallback {
+  opacity: 0;
+}
+
+.portrait-particle-canvas {
+  image-rendering: pixelated;
+  pointer-events: none;
 }
 
 .portrait-glitch {
   z-index: 2;
-  opacity: 0.2;
-  background-image: url("/0xaa.png");
-  background-position: center;
-  background-size: cover;
+  opacity: 0;
+  background: repeating-linear-gradient(to bottom, rgba(var(--cyan-rgb), 0.62) 0 2px, transparent 2px 11px);
   mix-blend-mode: screen;
   pointer-events: none;
 }
 
 .portrait-cyan {
-  background-color: var(--cyan);
-  background-blend-mode: color;
   transform: translateX(-0.5rem);
   clip-path: inset(4% 0 69% 0);
   animation: portrait-glitch-cyan 10s steps(2, end) infinite;
 }
 
 .portrait-pink {
-  background-color: var(--magenta);
-  background-blend-mode: color;
+  background: repeating-linear-gradient(to bottom, rgba(var(--magenta-rgb), 0.72) 0 2px, transparent 2px 9px);
   transform: translateX(0.5rem);
   clip-path: inset(63% 0 10% 0);
   animation: portrait-glitch-pink 10s 0.18s steps(2, end) infinite;
@@ -831,6 +850,206 @@ p {
   color: rgba(244, 247, 251, 0.3);
 }
 
+.work-section {
+  padding-block: 0 clamp(6.5rem, 12vw, 11rem);
+  border-top: 1px solid var(--line);
+}
+
+.work-section .section-tag {
+  padding-top: clamp(4.5rem, 9vw, 8.5rem);
+}
+
+.work-header {
+  display: flex;
+  gap: 2rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.work-header h2 {
+  margin-bottom: 0;
+  font-family: var(--display);
+  font-size: clamp(3.5rem, 8.8vw, 8.4rem);
+  font-weight: 900;
+  line-height: 0.82;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.work-header h2 em {
+  color: transparent;
+  font-style: normal;
+  -webkit-text-stroke: 1px var(--cyan);
+  text-shadow: 0.045em 0 rgba(var(--magenta-rgb), 0.45);
+}
+
+.github-profile-link {
+  display: inline-flex;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid rgba(var(--cyan-rgb), 0.55);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  transition: color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.github-profile-link span {
+  color: var(--magenta);
+  font-size: 1rem;
+}
+
+.github-profile-link:hover,
+.github-profile-link:focus-visible {
+  border-color: var(--magenta);
+  color: var(--cyan);
+  transform: translateY(-2px);
+}
+
+.repo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: clamp(3rem, 7vw, 6rem);
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.repo-card {
+  position: relative;
+  min-height: 16.5rem;
+  overflow: hidden;
+  padding: clamp(1.35rem, 2.7vw, 2.3rem);
+  background: rgba(7, 10, 17, 0.94);
+  transition: background 220ms ease;
+}
+
+.repo-card::before,
+.repo-card::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.repo-card::before {
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(circle at 0 0, rgba(var(--cyan-rgb), 0.19), transparent 52%);
+  transition: opacity 220ms ease;
+}
+
+.repo-card::after {
+  right: -5rem;
+  bottom: -8rem;
+  width: 18rem;
+  height: 18rem;
+  border: 1px solid rgba(var(--cyan-rgb), 0.18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5rem rgba(var(--cyan-rgb), 0.025), 0 0 0 3rem rgba(var(--cyan-rgb), 0.02);
+  transform: scale(0.72);
+  transition: transform 350ms cubic-bezier(0.2, 0.7, 0.2, 1), border-color 220ms ease;
+}
+
+.repo-card:hover,
+.repo-card:focus-visible {
+  background: rgba(9, 16, 25, 0.98);
+}
+
+.repo-card:hover::before,
+.repo-card:focus-visible::before {
+  opacity: 1;
+}
+
+.repo-card:hover::after,
+.repo-card:focus-visible::after {
+  border-color: rgba(var(--magenta-rgb), 0.45);
+  transform: scale(1);
+}
+
+.repo-card-topline,
+.repo-card h3,
+.repo-card p,
+.repo-arrow {
+  position: relative;
+  z-index: 1;
+}
+
+.repo-card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.repo-card-topline span:last-child {
+  color: var(--magenta);
+}
+
+.repo-card h3 {
+  max-width: 26rem;
+  margin: clamp(2.6rem, 5vw, 4.2rem) 0 0.85rem;
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: clamp(2.7rem, 5vw, 5.2rem);
+  font-weight: 900;
+  line-height: 0.78;
+  letter-spacing: -0.035em;
+}
+
+.repo-card p {
+  max-width: 23rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.8;
+}
+
+.repo-arrow {
+  position: absolute;
+  right: clamp(1.35rem, 2.7vw, 2.3rem);
+  bottom: clamp(1.35rem, 2.7vw, 2.3rem);
+  color: var(--cyan);
+  font-family: var(--display);
+  font-size: 2rem;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.repo-card:hover .repo-arrow,
+.repo-card:focus-visible .repo-arrow {
+  color: var(--magenta);
+  transform: translate(0.2rem, -0.2rem);
+}
+
+.repo-card-featured {
+  grid-row: span 2;
+  min-height: 33rem;
+  background:
+    linear-gradient(148deg, rgba(var(--magenta-rgb), 0.1), transparent 42%),
+    rgba(7, 10, 17, 0.94);
+}
+
+.repo-card-featured h3 {
+  margin-top: clamp(8rem, 16vw, 12rem);
+  font-size: clamp(3.5rem, 6.7vw, 7rem);
+}
+
+.repo-card-neuro::before {
+  background: radial-gradient(circle at 0 0, rgba(var(--magenta-rgb), 0.2), transparent 52%);
+}
+
+.repo-card-neuro::after {
+  border-radius: 38% 62% 55% 45% / 48% 41% 59% 52%;
+  border-color: rgba(var(--magenta-rgb), 0.21);
+}
+
 .transmission-section {
   padding-top: 0;
 }
@@ -974,7 +1193,8 @@ p {
   font-size: 0.54rem;
 }
 
-.footer button {
+.footer button,
+.footer a {
   padding: 0;
   border: 0;
   background: transparent;
@@ -987,6 +1207,16 @@ p {
 
 .footer button span {
   color: var(--magenta);
+}
+
+.footer a {
+  color: var(--paper);
+}
+
+.footer a:hover,
+.footer a:focus-visible {
+  color: var(--cyan);
+  text-shadow: 0 0 14px rgba(var(--cyan-rgb), 0.8);
 }
 
 .is-pulsing .ambient {
@@ -1112,6 +1342,7 @@ p {
   .topbar,
   .hero,
   .signal-section,
+  .work-section,
   .transmission-section,
   .footer {
     width: min(100% - 2rem, 680px);
@@ -1173,6 +1404,29 @@ p {
     grid-template-columns: 1fr;
   }
 
+  .work-header {
+    display: grid;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .github-profile-link {
+    justify-self: start;
+  }
+
+  .repo-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .repo-card-featured {
+    grid-row: auto;
+    min-height: 22rem;
+  }
+
+  .repo-card-featured h3 {
+    margin-top: 4rem;
+  }
+
   .protocol-card {
     min-height: 13.5rem;
   }
@@ -1191,6 +1445,7 @@ p {
   .topbar,
   .hero,
   .signal-section,
+  .work-section,
   .transmission-section,
   .footer {
     width: min(100% - 1.5rem, 480px);
