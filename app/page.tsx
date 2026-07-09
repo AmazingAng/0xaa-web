@@ -9,7 +9,7 @@ type Particle = {
   vx: number;
   vy: number;
   radius: number;
-  hue: number;
+  tone: number;
   drift: number;
 };
 
@@ -69,7 +69,7 @@ export default function Home() {
           vx: (Math.random() - 0.5) * 0.34,
           vy: (Math.random() - 0.5) * 0.34,
           radius: Math.random() * 1.45 + 0.3,
-          hue: Math.random() > 0.58 ? 321 : 182,
+          tone: Math.random() > 0.58 ? 238 : 126,
           drift: Math.random() * Math.PI * 2,
         });
       }
@@ -124,7 +124,7 @@ export default function Home() {
         if (particle.y > height + 12) particle.y = -12;
 
         context.beginPath();
-        context.fillStyle = `hsla(${particle.hue}, 100%, 76%, ${0.18 + particle.radius / 4})`;
+        context.fillStyle = `rgba(${particle.tone}, ${particle.tone}, ${particle.tone}, ${0.16 + particle.radius / 4})`;
         context.arc(particle.x, particle.y, particle.radius + energy * 0.7, 0, Math.PI * 2);
         context.fill();
       }
@@ -139,8 +139,9 @@ export default function Home() {
 
           if (distanceSquared < maxDistanceSquared) {
             const opacity = (1 - distanceSquared / maxDistanceSquared) * (0.085 + energy * 0.13);
+            const tone = Math.max(particles[first].tone, particles[second].tone);
             context.beginPath();
-            context.strokeStyle = `rgba(${particles[first].hue === 321 ? "255, 61, 173" : "53, 246, 228"}, ${opacity})`;
+            context.strokeStyle = `rgba(${tone}, ${tone}, ${tone}, ${opacity})`;
             context.lineWidth = 0.55;
             context.moveTo(particles[first].x, particles[first].y);
             context.lineTo(particles[second].x, particles[second].y);

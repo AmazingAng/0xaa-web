@@ -11,21 +11,21 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(origin),
     title: "0xaa.xyz — Personal Signal",
-    description: "A personal signal from the edge of the network.",
+    description: "A monochrome personal signal from the edge of the network.",
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg",
     },
     openGraph: {
       title: "0xaa.xyz — Personal Signal",
-      description: "A personal signal from the edge of the network.",
+      description: "A monochrome personal signal from the edge of the network.",
       type: "website",
       url: "/",
       images: [
         {
-          url: "/og.png",
-          width: 1730,
-          height: 909,
+          url: "/og-monochrome.png",
+          width: 1732,
+          height: 908,
           alt: "0xaa.xyz Personal Signal",
         },
       ],
@@ -33,8 +33,8 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: "0xaa.xyz — Personal Signal",
-      description: "A personal signal from the edge of the network.",
-      images: ["/og.png"],
+      description: "A monochrome personal signal from the edge of the network.",
+      images: ["/og-monochrome.png"],
     },
   };
 }

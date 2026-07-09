@@ -1,33 +1,63 @@
 "use client";
 
+import * as THREE from "three";
 import { useEffect, useRef, useState } from "react";
 
 type ParticleSeed = {
   nx: number;
   ny: number;
-  alpha: number;
-  color: "paper" | "cyan" | "magenta";
-  radius: number;
+  depth: number;
+  size: number;
+  opacity: number;
+  tone: number;
   phase: number;
-};
-
-type PortraitParticle = ParticleSeed & {
-  homeX: number;
-  homeY: number;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
 };
 
 type ParticlePortraitProps = {
   pulseSequence: number;
 };
 
+const portraitAspect = 400 / 352;
+
 const stableHash = (x: number, y: number) => {
   const value = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
   return value - Math.floor(value);
 };
+
+const vertexShader = `
+  attribute float aSize;
+  attribute float aOpacity;
+  attribute vec3 color;
+
+  uniform float uPixelRatio;
+  uniform float uPulse;
+
+  varying vec3 vColor;
+  varying float vOpacity;
+
+  void main() {
+    vColor = color;
+    vOpacity = aOpacity;
+
+    vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * viewPosition;
+    gl_PointSize = aSize * uPixelRatio * (1.0 + uPulse * 0.42);
+  }
+`;
+
+const fragmentShader = `
+  varying vec3 vColor;
+  varying float vOpacity;
+
+  void main() {
+    float distanceToCenter = length(gl_PointCoord - vec2(0.5));
+    float edge = 1.0 - smoothstep(0.18, 0.5, distanceToCenter);
+    float core = 1.0 - smoothstep(0.0, 0.22, distanceToCenter);
+    float alpha = edge * vOpacity;
+
+    gl_FragColor = vec4(vColor + core * 0.08, alpha);
+  }
+`;
 
 export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,238 +66,337 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
+    const host = canvas?.parentElement;
 
-    if (!canvas || !context) return;
+    if (!canvas || !host) return;
+
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: true,
+        powerPreference: "high-performance",
+      });
+    } catch {
+      return;
+    }
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const host = canvas.parentElement;
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.ShaderMaterial({
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.NormalBlending,
+      uniforms: {
+        uPixelRatio: { value: 1 },
+        uPulse: { value: 0 },
+      },
+      vertexShader,
+      fragmentShader,
+    });
+    const cloud = new THREE.Points(geometry, material);
+
+    camera.position.z = 3;
+    cloud.frustumCulled = false;
+    scene.add(cloud);
+    renderer.setClearColor(0x000000, 0);
+
     const image = new Image();
     const sampleCanvas = document.createElement("canvas");
     const sampleContext = sampleCanvas.getContext("2d", { willReadFrequently: true });
     const seeds: ParticleSeed[] = [];
-    const particles: PortraitParticle[] = [];
-    const pointer = { x: -1000, y: -1000, active: false };
+    const pointer = { x: 0, y: 0, active: false };
+    let positionAttribute: THREE.BufferAttribute | null = null;
+    let basePositions = new Float32Array();
+    let positions = new Float32Array();
+    let velocities = new Float32Array();
     let width = 0;
     let height = 0;
-    let ratio = 1;
+    let viewportWidth = 2.4;
+    let viewportHeight = 2.4;
     let frame = 0;
-    let previousTime = 0;
+    let lastTime = performance.now();
     let pulseEnergy = 0;
-    let imageLoaded = false;
-    let animationRequested = false;
-    let isVisible = true;
+    let portraitReady = false;
+    let frameRequested = false;
+    let inViewport = true;
+    let disposed = false;
 
-    const colorMap = {
-      paper: "244, 247, 251",
-      cyan: "53, 246, 228",
-      magenta: "255, 61, 173",
+    const canRender = () => !disposed && portraitReady && inViewport && !document.hidden;
+
+    const render = () => {
+      if (!disposed) renderer.render(scene, camera);
     };
 
-    const draw = (time: number) => {
-      animationRequested = false;
-      if (!imageLoaded || !isVisible) return;
+    const rebuildGeometry = () => {
+      if (!seeds.length) return;
 
-      const delta = Math.min((time - previousTime) / 16.67 || 1, 2.5);
-      previousTime = time;
-      pulseEnergy = Math.max(0, pulseEnergy - 0.02 * delta);
+      const imageHeight = Math.min(viewportHeight * 0.82, viewportWidth * 0.76 * portraitAspect);
+      const imageWidth = imageHeight / portraitAspect;
+      const count = seeds.length;
+      const colors = new Float32Array(count * 3);
+      const sizes = new Float32Array(count);
+      const opacities = new Float32Array(count);
 
-      context.clearRect(0, 0, width, height);
-      context.globalCompositeOperation = "lighter";
+      basePositions = new Float32Array(count * 3);
+      positions = new Float32Array(count * 3);
+      velocities = new Float32Array(count * 3);
 
-      let motion = pulseEnergy;
-      for (const particle of particles) {
-        const spring = reducedMotion ? 0.17 : 0.045;
-        particle.vx += (particle.homeX - particle.x) * spring;
-        particle.vy += (particle.homeY - particle.y) * spring;
+      seeds.forEach((seed, index) => {
+        const point = index * 3;
+        const x = (seed.nx - 0.5) * imageWidth;
+        const y = (0.5 - seed.ny) * imageHeight;
 
-        if (pointer.active && !reducedMotion) {
-          const dx = particle.x - pointer.x;
-          const dy = particle.y - pointer.y;
-          const distance = Math.hypot(dx, dy);
+        basePositions[point] = x;
+        basePositions[point + 1] = y;
+        basePositions[point + 2] = seed.depth;
+        positions[point] = x;
+        positions[point + 1] = y;
+        positions[point + 2] = seed.depth;
+        colors[point] = seed.tone;
+        colors[point + 1] = seed.tone;
+        colors[point + 2] = seed.tone;
+        sizes[index] = seed.size;
+        opacities[index] = seed.opacity;
+      });
 
-          if (distance < 96) {
-            const force = ((96 - distance) / 96) * 0.58;
-            particle.vx += (dx / (distance || 1)) * force;
-            particle.vy += (dy / (distance || 1)) * force;
-          }
-        }
-
-        particle.vx += Math.sin(time * 0.0012 + particle.phase) * 0.0018;
-        particle.vy += Math.cos(time * 0.0011 + particle.phase) * 0.0012;
-        particle.x += particle.vx * delta;
-        particle.y += particle.vy * delta;
-        particle.vx *= reducedMotion ? 0.56 : 0.87;
-        particle.vy *= reducedMotion ? 0.56 : 0.87;
-        motion += Math.abs(particle.vx) + Math.abs(particle.vy);
-
-        const glow = pulseEnergy * 0.55;
-        context.fillStyle = `rgba(${colorMap[particle.color]}, ${Math.min(1, particle.alpha + glow)})`;
-        context.fillRect(
-          particle.x,
-          particle.y,
-          particle.radius + pulseEnergy * 0.78,
-          particle.radius + pulseEnergy * 0.78,
-        );
-      }
-
-      context.globalCompositeOperation = "source-over";
-
-      if (!reducedMotion && (pointer.active || pulseEnergy > 0.015 || motion > 2.8)) {
-        requestDraw();
-      }
-    };
-
-    const requestDraw = () => {
-      if (animationRequested || reducedMotion || !isVisible) return;
-      animationRequested = true;
-      frame = window.requestAnimationFrame(draw);
+      positionAttribute = new THREE.BufferAttribute(positions, 3);
+      geometry.setAttribute("position", positionAttribute);
+      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+      geometry.setAttribute("aOpacity", new THREE.BufferAttribute(opacities, 1));
+      geometry.computeBoundingSphere();
     };
 
     const resize = () => {
       const bounds = canvas.getBoundingClientRect();
       width = Math.max(1, bounds.width);
       height = Math.max(1, bounds.height);
-      ratio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(width * ratio);
-      canvas.height = Math.round(height * ratio);
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
-      for (const particle of particles) {
-        particle.homeX = particle.nx * width;
-        particle.homeY = particle.ny * height;
-        particle.x = particle.homeX;
-        particle.y = particle.homeY;
-        particle.vx = 0;
-        particle.vy = 0;
+      renderer.setPixelRatio(pixelRatio);
+      renderer.setSize(width, height, false);
+      viewportHeight = viewportWidth * (height / width);
+      camera.left = -viewportWidth / 2;
+      camera.right = viewportWidth / 2;
+      camera.top = viewportHeight / 2;
+      camera.bottom = -viewportHeight / 2;
+      camera.updateProjectionMatrix();
+      material.uniforms.uPixelRatio.value = pixelRatio;
+
+      if (portraitReady) rebuildGeometry();
+      render();
+    };
+
+    const requestFrame = () => {
+      if (frameRequested || reducedMotion || !canRender()) return;
+      frameRequested = true;
+      frame = window.requestAnimationFrame(draw);
+    };
+
+    const draw = (time: number) => {
+      frameRequested = false;
+      if (!canRender() || !positionAttribute) return;
+
+      const delta = Math.min((time - lastTime) / 16.67 || 1, 2.5);
+      lastTime = time;
+      pulseEnergy = Math.max(0, pulseEnergy - 0.019 * delta);
+
+      let motion = pulseEnergy;
+      const interactionRadius = Math.min(viewportWidth, viewportHeight) * 0.23;
+
+      for (let point = 0; point < positions.length; point += 3) {
+        const seed = seeds[point / 3];
+        const dxHome = basePositions[point] - positions[point];
+        const dyHome = basePositions[point + 1] - positions[point + 1];
+        const dzHome = basePositions[point + 2] - positions[point + 2];
+
+        velocities[point] += dxHome * 0.052 * delta;
+        velocities[point + 1] += dyHome * 0.052 * delta;
+        velocities[point + 2] += dzHome * 0.038 * delta;
+
+        if (pointer.active) {
+          const dx = positions[point] - pointer.x;
+          const dy = positions[point + 1] - pointer.y;
+          const distance = Math.hypot(dx, dy);
+
+          if (distance < interactionRadius) {
+            const force = ((interactionRadius - distance) / interactionRadius) * 0.0085;
+            velocities[point] += (dx / (distance || 1)) * force * delta;
+            velocities[point + 1] += (dy / (distance || 1)) * force * delta;
+          }
+        }
+
+        const drift = pulseEnergy * 0.0018;
+        velocities[point] += Math.sin(time * 0.0014 + seed.phase) * drift;
+        velocities[point + 1] += Math.cos(time * 0.0012 + seed.phase) * drift;
+
+        positions[point] += velocities[point] * delta;
+        positions[point + 1] += velocities[point + 1] * delta;
+        positions[point + 2] += velocities[point + 2] * delta;
+        velocities[point] *= 0.85;
+        velocities[point + 1] *= 0.85;
+        velocities[point + 2] *= 0.82;
+        motion += Math.abs(velocities[point]) + Math.abs(velocities[point + 1]);
       }
 
-      if (imageLoaded) draw(performance.now());
+      positionAttribute.needsUpdate = true;
+      material.uniforms.uPulse.value = pulseEnergy;
+      render();
+
+      if (pointer.active || pulseEnergy > 0.002 || motion > 0.018) requestFrame();
     };
 
     const buildPortrait = () => {
-      if (!sampleContext || imageLoaded) return;
+      if (disposed || portraitReady || !sampleContext || image.naturalWidth === 0) return;
 
-      const sampleSize = 136;
-      sampleCanvas.width = sampleSize;
-      sampleCanvas.height = sampleSize;
-      // Crop the plain outer margin so the particle portrait resolves to the character, not a square field.
-      sampleContext.drawImage(image, 24, 0, 352, 400, 0, 0, sampleSize, sampleSize);
-      const imageData = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
-      const step = window.innerWidth < 620 ? 3 : 2;
-      const maximum = window.innerWidth < 620 ? 430 : 880;
-      seeds.length = 0;
+      try {
+        const sampleSize = 148;
+        const isCompact = window.innerWidth < 620;
+        const step = isCompact ? 3 : 2;
+        const maximum = isCompact ? 430 : 920;
+        const candidates: ParticleSeed[] = [];
 
-      outer: for (let y = 1; y < sampleSize - 1; y += step) {
-        for (let x = 1; x < sampleSize - 1; x += step) {
-          const pixel = (y * sampleSize + x) * 4;
-          const right = (y * sampleSize + x + 1) * 4;
-          const below = ((y + 1) * sampleSize + x) * 4;
-          const luminance =
-            (0.2126 * imageData[pixel] + 0.7152 * imageData[pixel + 1] + 0.0722 * imageData[pixel + 2]) /
-            255;
-          const rightLuminance =
-            (0.2126 * imageData[right] + 0.7152 * imageData[right + 1] + 0.0722 * imageData[right + 2]) /
-            255;
-          const belowLuminance =
-            (0.2126 * imageData[below] + 0.7152 * imageData[below + 1] + 0.0722 * imageData[below + 2]) /
-            255;
-          const edge = Math.min(1, (Math.abs(luminance - rightLuminance) + Math.abs(luminance - belowLuminance)) * 1.6);
-          const brightMatter = luminance > 0.9 ? (luminance - 0.89) * 1.8 : 0;
-          const density = Math.max(edge * 0.9, brightMatter * 0.34);
-          const seed = stableHash(x, y);
+        sampleCanvas.width = sampleSize;
+        sampleCanvas.height = sampleSize;
+        sampleContext.drawImage(image, 24, 0, 352, 400, 0, 0, sampleSize, sampleSize);
+        const imageData = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
 
-          if (density < 0.1 || seed > density) continue;
+        for (let y = 1; y < sampleSize - 1; y += step) {
+          for (let x = 1; x < sampleSize - 1; x += step) {
+            const pixel = (y * sampleSize + x) * 4;
+            const right = (y * sampleSize + x + 1) * 4;
+            const below = ((y + 1) * sampleSize + x) * 4;
+            const luminance =
+              (0.2126 * imageData[pixel] + 0.7152 * imageData[pixel + 1] + 0.0722 * imageData[pixel + 2]) /
+              255;
+            const rightLuminance =
+              (0.2126 * imageData[right] + 0.7152 * imageData[right + 1] + 0.0722 * imageData[right + 2]) /
+              255;
+            const belowLuminance =
+              (0.2126 * imageData[below] + 0.7152 * imageData[below + 1] + 0.0722 * imageData[below + 2]) /
+              255;
+            const alpha = imageData[pixel + 3] / 255;
+            const ink = alpha * Math.pow(Math.max(0, (0.95 - luminance) / 0.95), 0.74);
+            const edge = Math.min(
+              1,
+              (Math.abs(luminance - rightLuminance) + Math.abs(luminance - belowLuminance)) * 1.65,
+            );
+            const density = Math.min(0.94, ink * 0.78 + edge * 0.68);
+            const chance = stableHash(x, y);
 
-          const isEdge = edge > 0.24;
-          const color = isEdge ? (seed > 0.5 ? "cyan" : "magenta") : "paper";
-          seeds.push({
-            nx: (x + 0.5 + (seed - 0.5) * 1.4) / sampleSize,
-            ny: (y + 0.5 + (stableHash(y, x) - 0.5) * 1.4) / sampleSize,
-            alpha: isEdge ? 0.72 + edge * 0.28 : 0.26 + brightMatter * 0.42,
-            color,
-            radius: isEdge ? 0.8 + seed * 0.8 : 0.55 + seed * 0.65,
-            phase: seed * Math.PI * 2,
-          });
+            if (density < 0.09 || chance > density) continue;
 
-          if (seeds.length >= maximum) break outer;
+            const edgeWeight = Math.min(1, edge * 1.7);
+            candidates.push({
+              nx: (x + 0.5 + (chance - 0.5) * 1.15) / sampleSize,
+              ny: (y + 0.5 + (stableHash(y, x) - 0.5) * 1.15) / sampleSize,
+              depth: (stableHash(x + 97, y + 43) - 0.5) * 0.18,
+              size: 1.35 + edgeWeight * 1.45 + stableHash(x + 7, y + 11) * 0.65,
+              opacity: 0.38 + edgeWeight * 0.52 + ink * 0.1,
+              tone: 0.38 + edgeWeight * 0.53 + ink * 0.12,
+              phase: stableHash(x + 211, y + 619) * Math.PI * 2,
+            });
+          }
         }
-      }
 
-      particles.length = 0;
-      for (const seed of seeds) {
-        particles.push({
-          ...seed,
-          homeX: seed.nx * width,
-          homeY: seed.ny * height,
-          x: seed.nx * width,
-          y: seed.ny * height,
-          vx: 0,
-          vy: 0,
-        });
-      }
+        candidates.sort((first, second) => first.phase - second.phase);
+        seeds.push(...candidates.slice(0, maximum));
+        portraitReady = seeds.length > 0;
+        if (!portraitReady) return;
 
-      imageLoaded = true;
-      setIsReady(true);
-      draw(performance.now());
+        rebuildGeometry();
+        setIsReady(true);
+        render();
+      } catch {
+        // A normal portrait is left visible if the source cannot be sampled.
+      }
     };
 
     const ignite = () => {
-      if (!imageLoaded || reducedMotion) return;
+      if (!portraitReady || reducedMotion) return;
+
       pulseEnergy = 1;
-      for (const particle of particles) {
-        const dx = particle.x - width / 2;
-        const dy = particle.y - height / 2;
-        const distance = Math.hypot(dx, dy) || 1;
-        const force = 1.1 + stableHash(particle.homeX, particle.homeY) * 2.4;
-        particle.vx += (dx / distance) * force;
-        particle.vy += (dy / distance) * force;
+      for (let point = 0; point < positions.length; point += 3) {
+        const x = positions[point];
+        const y = positions[point + 1];
+        const distance = Math.hypot(x, y) || 1;
+        const force = 0.018 + stableHash(point, point + 17) * 0.036;
+        velocities[point] += (x / distance) * force;
+        velocities[point + 1] += (y / distance) * force;
+        velocities[point + 2] += (stableHash(point + 73, point + 19) - 0.5) * 0.02;
       }
-      requestDraw();
+
+      requestFrame();
     };
 
     const handlePointerMove = (event: PointerEvent) => {
       const bounds = canvas.getBoundingClientRect();
-      pointer.x = event.clientX - bounds.left;
-      pointer.y = event.clientY - bounds.top;
+      pointer.x = ((event.clientX - bounds.left) / bounds.width - 0.5) * viewportWidth;
+      pointer.y = (0.5 - (event.clientY - bounds.top) / bounds.height) * viewportHeight;
       pointer.active = true;
-      requestDraw();
+      requestFrame();
     };
 
     const handlePointerLeave = () => {
       pointer.active = false;
-      requestDraw();
+      requestFrame();
     };
 
     const handleVisibility = () => {
-      isVisible = !document.hidden;
-      if (isVisible) {
-        previousTime = performance.now();
-        requestDraw();
-      } else {
+      lastTime = performance.now();
+      if (document.hidden) {
         window.cancelAnimationFrame(frame);
-        animationRequested = false;
+        frameRequested = false;
+      } else {
+        render();
+        requestFrame();
       }
     };
 
-    const observer = new ResizeObserver(resize);
-    if (host) observer.observe(host);
-    resize();
-    host?.addEventListener("pointermove", handlePointerMove, { passive: true });
-    host?.addEventListener("pointerleave", handlePointerLeave);
+    const resizeObserver = new ResizeObserver(resize);
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        inViewport = entry.isIntersecting;
+        lastTime = performance.now();
+        if (inViewport) {
+          render();
+          requestFrame();
+        } else {
+          window.cancelAnimationFrame(frame);
+          frameRequested = false;
+        }
+      },
+      { threshold: 0.01 },
+    );
+
+    resizeObserver.observe(host);
+    intersectionObserver.observe(host);
+    host.addEventListener("pointermove", handlePointerMove, { passive: true });
+    host.addEventListener("pointerleave", handlePointerLeave);
     document.addEventListener("visibilitychange", handleVisibility);
-    igniteRef.current = ignite;
     image.addEventListener("load", buildPortrait, { once: true });
     image.src = "/0xaa.png";
     if (image.complete) buildPortrait();
+    igniteRef.current = ignite;
+    resize();
 
     return () => {
-      observer.disconnect();
+      disposed = true;
       window.cancelAnimationFrame(frame);
-      host?.removeEventListener("pointermove", handlePointerMove);
-      host?.removeEventListener("pointerleave", handlePointerLeave);
+      resizeObserver.disconnect();
+      intersectionObserver.disconnect();
+      host.removeEventListener("pointermove", handlePointerMove);
+      host.removeEventListener("pointerleave", handlePointerLeave);
       document.removeEventListener("visibilitychange", handleVisibility);
+      image.removeEventListener("load", buildPortrait);
       igniteRef.current = () => undefined;
+      geometry.dispose();
+      material.dispose();
+      renderer.dispose();
     };
   }, []);
 

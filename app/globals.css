@@ -1,15 +1,16 @@
 :root {
-  --void: #05060b;
-  --void-soft: #090d16;
-  --panel: #0d121e;
-  --paper: #f4f7fb;
-  --muted: #91a3b0;
-  --cyan: #35f6e4;
-  --cyan-rgb: 53, 246, 228;
-  --magenta: #ff3dad;
-  --magenta-rgb: 255, 61, 173;
-  --violet: #8a5cff;
-  --line: rgba(143, 172, 196, 0.16);
+  --void: #050505;
+  --void-soft: #0b0b0b;
+  --panel: #121212;
+  --paper: #f4f4f4;
+  --paper-rgb: 244, 244, 244;
+  --muted: #a3a3a3;
+  --cyan: #f2f2f2;
+  --cyan-rgb: 242, 242, 242;
+  --magenta: #737373;
+  --magenta-rgb: 115, 115, 115;
+  --violet: #b0b0b0;
+  --line: rgba(255, 255, 255, 0.14);
   --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   --display: Impact, Haettenschweiler, "Arial Narrow Bold", "Arial Black", sans-serif;
   --sans: "PingFang SC", "Microsoft YaHei", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -76,8 +77,8 @@ a {
 .site-shell::before {
   opacity: 0.34;
   background-image:
-    linear-gradient(rgba(112, 151, 177, 0.09) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(112, 151, 177, 0.09) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
   background-size: 4.5rem 4.5rem;
   mask-image: radial-gradient(ellipse 95% 72% at 50% 12%, black, transparent 82%);
 }
@@ -394,7 +395,7 @@ p {
 
 .button-ghost {
   border-color: rgba(var(--cyan-rgb), 0.52);
-  background: rgba(5, 6, 11, 0.28);
+  background: rgba(5, 5, 5, 0.28);
   color: var(--paper);
 }
 
@@ -430,7 +431,7 @@ p {
   inset: 10%;
   overflow: hidden;
   border: 1px solid rgba(var(--cyan-rgb), 0.6);
-  background: #030407;
+  background: #030303;
   box-shadow: -10px 10px 0 rgba(var(--magenta-rgb), 0.36), 0 0 0 1px rgba(var(--magenta-rgb), 0.28), 0 0 55px rgba(var(--cyan-rgb), 0.16), inset 0 0 45px rgba(var(--cyan-rgb), 0.12);
   clip-path: polygon(8% 0, 92% 0, 100% 8%, 100% 92%, 92% 100%, 8% 100%, 0 92%, 0 8%);
   transform: rotateX(var(--rotate-x)) rotateY(var(--rotate-y));
@@ -459,7 +460,7 @@ p {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: radial-gradient(circle at 51% 48%, rgba(var(--cyan-rgb), 0.08), transparent 54%);
+  background: radial-gradient(circle at 51% 48%, rgba(255, 255, 255, 0.065), transparent 54%);
 }
 
 .portrait-fallback,
@@ -483,7 +484,6 @@ p {
 }
 
 .portrait-particle-canvas {
-  image-rendering: pixelated;
   pointer-events: none;
 }
 
@@ -611,7 +611,7 @@ p {
   align-items: center;
   padding: 0.72rem 0.85rem;
   border: 1px solid rgba(var(--paper-rgb, 244, 247, 251), 0.26);
-  background: rgba(5, 6, 11, 0.84);
+  background: rgba(5, 5, 5, 0.84);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   color: var(--paper);
   font-family: var(--mono);
@@ -644,7 +644,7 @@ p {
 }
 
 .rail-item span {
-  color: rgba(145, 163, 176, 0.62);
+  color: rgba(163, 163, 163, 0.62);
 }
 
 .rail-item strong {
@@ -769,7 +769,7 @@ p {
   min-height: 16rem;
   overflow: hidden;
   padding: 1.5rem;
-  background: rgba(7, 10, 17, 0.92);
+  background: rgba(10, 10, 10, 0.92);
 }
 
 .protocol-card::before {
@@ -843,11 +843,11 @@ p {
 }
 
 .protocol-card-neutral .protocol-mark {
-  color: rgba(244, 247, 251, 0.12);
+  color: rgba(244, 244, 244, 0.12);
 }
 
 .protocol-card-neutral:hover .protocol-mark {
-  color: rgba(244, 247, 251, 0.3);
+  color: rgba(244, 244, 244, 0.3);
 }
 
 .work-section {
@@ -924,7 +924,7 @@ p {
   min-height: 16.5rem;
   overflow: hidden;
   padding: clamp(1.35rem, 2.7vw, 2.3rem);
-  background: rgba(7, 10, 17, 0.94);
+  background: rgba(10, 10, 10, 0.94);
   transition: background 220ms ease;
 }
 
@@ -956,7 +956,7 @@ p {
 
 .repo-card:hover,
 .repo-card:focus-visible {
-  background: rgba(9, 16, 25, 0.98);
+  background: rgba(18, 18, 18, 0.98);
 }
 
 .repo-card:hover::before,
@@ -1033,7 +1033,7 @@ p {
   min-height: 33rem;
   background:
     linear-gradient(148deg, rgba(var(--magenta-rgb), 0.1), transparent 42%),
-    rgba(7, 10, 17, 0.94);
+    rgba(10, 10, 10, 0.94);
 }
 
 .repo-card-featured h3 {
@@ -1062,7 +1062,7 @@ p {
   background:
     linear-gradient(120deg, rgba(var(--magenta-rgb), 0.08), transparent 37%),
     linear-gradient(300deg, rgba(var(--cyan-rgb), 0.07), transparent 43%),
-    rgba(7, 9, 15, 0.88);
+    rgba(10, 10, 10, 0.88);
   box-shadow: 10px 10px 0 rgba(var(--cyan-rgb), 0.17), 0 0 50px rgba(var(--magenta-rgb), 0.08);
 }
 
@@ -1189,7 +1189,7 @@ p {
   gap: 1rem;
   padding-block: 1.55rem 2.2rem;
   border-top: 1px solid var(--line);
-  color: rgba(145, 163, 176, 0.76);
+  color: rgba(163, 163, 163, 0.76);
   font-size: 0.54rem;
 }
 
