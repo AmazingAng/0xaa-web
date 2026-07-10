@@ -367,7 +367,6 @@ button {
   background: radial-gradient(circle at 58% 43%, rgba(255, 255, 255, 0.065), transparent 56%);
 }
 
-.portrait-fallback,
 .portrait-particle-canvas {
   position: absolute;
   inset: 0;
@@ -376,19 +375,74 @@ button {
   height: 100%;
 }
 
-.portrait-fallback {
-  object-fit: cover;
-  filter: grayscale(1) contrast(1.35) brightness(0.82);
-  opacity: 0.7;
-  transition: opacity 240ms ease;
+.portrait-particle-canvas {
+  z-index: 2;
+  pointer-events: none;
 }
 
-.particle-portrait.is-ready .portrait-fallback {
+.portrait-loading,
+.portrait-unavailable {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  color: var(--silver);
+  font-family: var(--mono);
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-align: center;
+  pointer-events: none;
+}
+
+.portrait-loading {
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.07), transparent 48%),
+    #060707;
+  background-size: 2.6rem 2.6rem, 2.6rem 2.6rem, auto, auto;
+  transition: opacity 260ms ease;
+}
+
+.portrait-loading::before,
+.portrait-loading::after {
+  position: absolute;
+  right: 11%;
+  left: 11%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  content: "";
+}
+
+.portrait-loading::before {
+  top: 42%;
+  animation: loading-scan 1.5s ease-in-out infinite;
+}
+
+.portrait-loading::after {
+  top: 58%;
+  opacity: 0.38;
+  animation: loading-scan 1.5s -0.7s ease-in-out infinite reverse;
+}
+
+.portrait-unavailable {
+  opacity: 0;
+  background: #060707;
+  color: var(--muted);
+  transition: opacity 160ms ease;
+}
+
+.particle-portrait.is-ready .portrait-loading,
+.particle-portrait.is-unavailable .portrait-loading {
   opacity: 0;
 }
 
-.portrait-particle-canvas {
-  pointer-events: none;
+.particle-portrait.is-unavailable .portrait-unavailable {
+  opacity: 1;
 }
 
 .portrait-grid-overlay {
@@ -1009,6 +1063,18 @@ button {
   }
   100% {
     filter: brightness(1);
+  }
+}
+
+@keyframes loading-scan {
+  0%,
+  100% {
+    opacity: 0.16;
+    transform: scaleX(0.22);
+  }
+  50% {
+    opacity: 0.92;
+    transform: scaleX(1);
   }
 }
 

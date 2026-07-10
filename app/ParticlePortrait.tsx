@@ -2,6 +2,7 @@
 
 import * as THREE from "three";
 import { useEffect, useRef, useState } from "react";
+import pointCloudData from "./generated/portrait-points.json";
 
 type ParticleSeed = {
   nx: number;
@@ -11,19 +12,42 @@ type ParticleSeed = {
   opacity: number;
   tone: number;
   phase: number;
-  rank: number;
+};
+
+type PointCloudAsset = {
+  version: number;
+  stride: number;
+  aspectRatio: number;
+  lod: {
+    mobile: number;
+    desktop: number;
+  };
+  points: number[];
 };
 
 type ParticlePortraitProps = {
   pulseSequence: number;
 };
 
-const portraitAspect = 400 / 352;
+const fallbackAspectRatio = 400 / 352;
+const pointCloud = pointCloudData as PointCloudAsset;
 
 const stableHash = (x: number, y: number) => {
   const value = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
   return value - Math.floor(value);
 };
+
+const isUsablePointCloud = (asset: PointCloudAsset) =>
+  asset.version === 1 &&
+  asset.stride === 7 &&
+  Number.isFinite(asset.aspectRatio) &&
+  asset.aspectRatio > 0 &&
+  Number.isInteger(asset.lod.mobile) &&
+  Number.isInteger(asset.lod.desktop) &&
+  asset.lod.mobile > 0 &&
+  asset.lod.desktop >= asset.lod.mobile &&
+  asset.points.length >= asset.lod.desktop * asset.stride &&
+  asset.points.every(Number.isFinite);
 
 const vertexShader = `
   attribute float aSize;
@@ -64,13 +88,19 @@ const fragmentShader = `
 export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const igniteRef = useRef<() => void>(() => undefined);
-  const [isReady, setIsReady] = useState(false);
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "unavailable">("loading");
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const host = canvas?.parentElement;
 
     if (!canvas || !host) return;
+
+    setLoadState("loading");
+    if (!isUsablePointCloud(pointCloud)) {
+      setLoadState("unavailable");
+      return;
+    }
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -81,6 +111,7 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
         powerPreference: "high-performance",
       });
     } catch {
+      setLoadState("unavailable");
       return;
     }
 
@@ -107,11 +138,27 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     scene.add(cloud);
     renderer.setClearColor(0x000000, 0);
 
-    const image = new Image();
-    const sampleCanvas = document.createElement("canvas");
-    const sampleContext = sampleCanvas.getContext("2d", { willReadFrequently: true });
     const seeds: ParticleSeed[] = [];
     const pointer = { x: 0, y: 0, active: false };
+    const pointCount = Math.min(
+      window.innerWidth < 620 ? pointCloud.lod.mobile : pointCloud.lod.desktop,
+      Math.floor(pointCloud.points.length / pointCloud.stride),
+    );
+    const pointOffset = pointCloud.stride;
+
+    for (let index = 0; index < pointCount; index += 1) {
+      const offset = index * pointOffset;
+      seeds.push({
+        nx: pointCloud.points[offset],
+        ny: pointCloud.points[offset + 1],
+        depth: pointCloud.points[offset + 2],
+        size: pointCloud.points[offset + 3],
+        opacity: pointCloud.points[offset + 4],
+        tone: pointCloud.points[offset + 5],
+        phase: pointCloud.points[offset + 6],
+      });
+    }
+
     let positionAttribute: THREE.BufferAttribute | null = null;
     let basePositions = new Float32Array();
     let positions = new Float32Array();
@@ -123,10 +170,11 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     let frame = 0;
     let lastTime = performance.now();
     let pulseEnergy = 0;
-    let portraitReady = false;
+    let portraitReady = seeds.length > 0;
     let frameRequested = false;
     let inViewport = true;
     let disposed = false;
+    const portraitAspect = pointCloud.aspectRatio || fallbackAspectRatio;
 
     const canRender = () => !disposed && portraitReady && inViewport && !document.hidden;
 
@@ -253,82 +301,6 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
       if (pointer.active || pulseEnergy > 0.002 || motion > 0.018) requestFrame();
     };
 
-    const buildPortrait = () => {
-      if (disposed || portraitReady || !sampleContext || image.naturalWidth === 0) return;
-
-      try {
-        const sampleSize = 168;
-        const isCompact = window.innerWidth < 620;
-        const step = 2;
-        const maximum = isCompact ? 760 : 1650;
-        const candidates: ParticleSeed[] = [];
-
-        sampleCanvas.width = sampleSize;
-        sampleCanvas.height = sampleSize;
-        sampleContext.drawImage(image, 24, 0, 352, 400, 0, 0, sampleSize, sampleSize);
-        const imageData = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
-
-        for (let y = 1; y < sampleSize - 1; y += step) {
-          for (let x = 1; x < sampleSize - 1; x += step) {
-            const pixel = (y * sampleSize + x) * 4;
-            const left = (y * sampleSize + x - 1) * 4;
-            const right = (y * sampleSize + x + 1) * 4;
-            const above = ((y - 1) * sampleSize + x) * 4;
-            const below = ((y + 1) * sampleSize + x) * 4;
-            const luminance =
-              (0.2126 * imageData[pixel] + 0.7152 * imageData[pixel + 1] + 0.0722 * imageData[pixel + 2]) /
-              255;
-            const rightLuminance =
-              (0.2126 * imageData[right] + 0.7152 * imageData[right + 1] + 0.0722 * imageData[right + 2]) /
-              255;
-            const leftLuminance =
-              (0.2126 * imageData[left] + 0.7152 * imageData[left + 1] + 0.0722 * imageData[left + 2]) /
-              255;
-            const aboveLuminance =
-              (0.2126 * imageData[above] + 0.7152 * imageData[above + 1] + 0.0722 * imageData[above + 2]) /
-              255;
-            const belowLuminance =
-              (0.2126 * imageData[below] + 0.7152 * imageData[below + 1] + 0.0722 * imageData[below + 2]) /
-              255;
-            const alpha = imageData[pixel + 3] / 255;
-            const ink = alpha * Math.pow(Math.max(0, (0.95 - luminance) / 0.95), 0.74);
-            const edge = Math.min(
-              1,
-              (Math.abs(leftLuminance - rightLuminance) + Math.abs(aboveLuminance - belowLuminance)) * 1.32,
-            );
-            const body = Math.max(0, ink - 0.67) * 0.18;
-            const density = Math.min(0.96, edge * 0.97 + body);
-            const chance = stableHash(x, y);
-
-            if (density < 0.1 || chance > density) continue;
-
-            const edgeWeight = Math.min(1, edge * 1.55);
-            candidates.push({
-              nx: (x + 0.5) / sampleSize,
-              ny: (y + 0.5) / sampleSize,
-              depth: (stableHash(x + 97, y + 43) - 0.5) * 0.18,
-              size: 1.02 + edgeWeight * 1.52 + stableHash(x + 7, y + 11) * 0.4,
-              opacity: 0.24 + edgeWeight * 0.68 + body * 0.2,
-              tone: 0.3 + edgeWeight * 0.64 + body * 0.15,
-              phase: stableHash(x + 211, y + 619) * Math.PI * 2,
-              rank: edge * 0.9 + body * 0.08 + stableHash(x + 641, y + 73) * 0.02,
-            });
-          }
-        }
-
-        candidates.sort((first, second) => second.rank - first.rank);
-        seeds.push(...candidates.slice(0, maximum));
-        portraitReady = seeds.length > 0;
-        if (!portraitReady) return;
-
-        rebuildGeometry();
-        setIsReady(true);
-        render();
-      } catch {
-        // A normal portrait is left visible if the source cannot be sampled.
-      }
-    };
-
     const ignite = () => {
       if (!portraitReady || reducedMotion) return;
 
@@ -391,11 +363,9 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     host.addEventListener("pointermove", handlePointerMove, { passive: true });
     host.addEventListener("pointerleave", handlePointerLeave);
     document.addEventListener("visibilitychange", handleVisibility);
-    image.addEventListener("load", buildPortrait, { once: true });
-    image.src = "/0xaa.png";
-    if (image.complete) buildPortrait();
     igniteRef.current = ignite;
     resize();
+    setLoadState("ready");
 
     return () => {
       disposed = true;
@@ -405,7 +375,6 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
       host.removeEventListener("pointermove", handlePointerMove);
       host.removeEventListener("pointerleave", handlePointerLeave);
       document.removeEventListener("visibilitychange", handleVisibility);
-      image.removeEventListener("load", buildPortrait);
       igniteRef.current = () => undefined;
       geometry.dispose();
       material.dispose();
@@ -418,8 +387,13 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
   }, [pulseSequence]);
 
   return (
-    <div className={`particle-portrait${isReady ? " is-ready" : ""}`} data-particle-portrait>
-      <img className="portrait-fallback" src="/0xaa.png" alt="0xaa 的黑白粒子头像" />
+    <div className={`particle-portrait is-${loadState}`} data-particle-portrait>
+      <span className="portrait-loading" aria-hidden="true">
+        POINT CLOUD / LOADING
+      </span>
+      <span className="portrait-unavailable" role="status">
+        PARTICLE PORTRAIT UNAVAILABLE
+      </span>
       <canvas ref={canvasRef} className="portrait-particle-canvas" aria-hidden="true" />
     </div>
   );

@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
-
-const developmentPreviewMeta =
-  /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i;
-const templateRoot = new URL("../", import.meta.url);
-const previewRoot = new URL("../app/_sites-preview/", import.meta.url);
 
 async function render() {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -28,60 +23,38 @@ async function render() {
   );
 }
 
-test("server-renders the starter loading skeleton", async () => {
+test("server-renders the 0xaa signal homepage", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, developmentPreviewMeta);
-  assert.match(html, /<title>Your site is taking shape<\/title>/i);
-  assert.match(html, /Codex is working/);
-  assert.match(html, /Your site is taking shape/);
-  assert.match(html, /Codex is building the first version/);
-  assert.match(html, /react-loading-skeleton/);
-  assert.match(html, /role="status"/);
+  assert.match(html, /<title>0xaa\.xyz — Personal Signal<\/title>/i);
+  assert.match(html, /PERSONAL SIGNAL/);
+  assert.match(html, /NEUROSCIENCE × WEB3/);
+  assert.match(html, /class="portrait-particle-canvas"/);
+  assert.match(html, /POINT CLOUD \/ LOADING/);
+  assert.match(html, /property="og:image" content="https:\/\/0xaa\.xyz\/og\.png"/);
+  assert.doesNotMatch(html, /src="\/0xaa\.png"/);
 });
 
-test("keeps the loading skeleton scoped and disposable", async () => {
-  const [preview, css, page, layout, packageJson, files] = await Promise.all([
-    readFile(new URL("SkeletonPreview.tsx", previewRoot), "utf8"),
-    readFile(new URL("preview.css", previewRoot), "utf8"),
-    readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+test("ships a precomputed point cloud instead of runtime image sampling", async () => {
+  const [component, generator, packageJson, rawPointCloud] = await Promise.all([
+    readFile(new URL("../app/ParticlePortrait.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../scripts/generate-portrait-points.mjs", import.meta.url), "utf8"),
     readFile(new URL("../package.json", import.meta.url), "utf8"),
-    readdir(previewRoot),
+    readFile(new URL("../app/generated/portrait-points.json", import.meta.url), "utf8"),
   ]);
+  const pointCloud = JSON.parse(rawPointCloud);
 
-  assert.deepEqual(files.sort(), ["SkeletonPreview.tsx", "preview.css"]);
-  assert.match(preview, /from "react-loading-skeleton"/);
-  assert.match(preview, /baseColor="#eceae7"/);
-  assert.match(preview, /highlightColor="#f9f8f6"/);
-  assert.match(preview, /duration=\{2\.8\}/);
-  assert.match(preview, /sites-skeleton-search-placeholder/);
-  assert.match(packageJson, /"react-loading-skeleton": "3\.5\.0"/);
-
-  const shellIndex = preview.indexOf('className="sites-skeleton-shell"');
-  const statusIndex = preview.indexOf('className="sites-skeleton-status"');
-  assert.ok(shellIndex >= 0 && statusIndex > shellIndex);
-  assert.match(css, /position:\s*fixed/);
-  assert.match(css, /inset:\s*0/);
-  assert.match(css, /opacity:\s*0\.52/);
-  assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.doesNotMatch(css, /#020617|canvas|pets|progress/i);
-  assert.doesNotMatch(
-    preview,
-    /loading-spinner|status-mark|status-progress|canvas|cookie|random/i,
-  );
-
-  assert.match(page, /export const metadata:\s*Metadata/);
-  assert.match(page, /"codex-preview": "development"/);
-  assert.match(page, /<SkeletonPreview \/>/);
-  assert.match(layout, /title:\s*"Starter Project"/);
-  assert.doesNotMatch(layout, /codex-preview|_sites-preview|themeColor|\bViewport\b/);
-  assert.doesNotMatch(css, /(^|\s)(html|body)\s*\{/m);
-
-  await assert.rejects(
-    access(new URL("public/_sites-preview", templateRoot)),
-  );
+  assert.equal(pointCloud.version, 1);
+  assert.equal(pointCloud.stride, 7);
+  assert.ok(pointCloud.lod.mobile > 0);
+  assert.ok(pointCloud.lod.desktop >= pointCloud.lod.mobile);
+  assert.equal(pointCloud.points.length, pointCloud.lod.desktop * pointCloud.stride);
+  assert.match(component, /from "\.\/generated\/portrait-points\.json"/);
+  assert.doesNotMatch(component, /getImageData|new Image\(|0xaa\.png/);
+  assert.match(generator, /static\/0xaa\.png/);
+  assert.match(packageJson, /"generate:portrait": "node scripts\/generate-portrait-points\.mjs"/);
+  assert.match(packageJson, /"build": "npm run generate:portrait/);
 });
