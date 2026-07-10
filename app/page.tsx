@@ -266,15 +266,6 @@ export default function Home() {
               <p>以 PyTorch 实现深度强化学习算法，让研究与构建相遇。</p>
               <span className="repo-arrow" aria-hidden="true">↗</span>
             </a>
-          </div>
-        </div>
-
-        <div className="repo-collection">
-          <div className="repo-collection-heading">
-            <span>02 / PERSONAL PROJECTS</span>
-            <span aria-hidden="true" />
-          </div>
-          <div className="repo-grid repo-grid-personal">
             <a className="repo-card" href="https://github.com/AmazingAng/PolyWorld" target="_blank" rel="noreferrer">
               <div className="repo-card-topline">
                 <span>PERSONAL / POLYMARKET</span>

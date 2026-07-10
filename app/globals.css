@@ -773,10 +773,6 @@ button {
   margin-top: clamp(3.6rem, 7vw, 6.5rem);
 }
 
-.repo-collection + .repo-collection {
-  margin-top: clamp(3.5rem, 7vw, 6.5rem);
-}
-
 .repo-collection-heading {
   display: flex;
   gap: 0.75rem;
@@ -805,18 +801,6 @@ button {
   margin-top: 1.25rem;
   border: 1px solid var(--line);
   background: var(--line);
-}
-
-.repo-grid-personal {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.repo-grid-personal .repo-card {
-  min-height: 18rem;
-}
-
-.repo-grid-personal .repo-card h3 {
-  font-size: clamp(2.55rem, 3.8vw, 4.35rem);
 }
 
 .repo-card {
