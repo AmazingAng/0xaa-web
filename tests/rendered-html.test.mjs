@@ -30,7 +30,7 @@ test("server-renders the 0xaa signal homepage", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>0xaa\.xyz — Personal Signal<\/title>/i);
-  assert.match(html, /PERSONAL SIGNAL/);
+  assert.doesNotMatch(html, /PERSONAL SIGNAL/);
   assert.match(html, /NEUROSCIENCE × WEB3/);
   assert.match(html, /Computational Neuroscience Ph\.D\./);
   assert.match(html, /终生学习/);

@@ -89,7 +89,6 @@ export default function Home() {
             <span>0xAA</span>
           </h1>
           <div className="hero-rule" aria-hidden="true" />
-          <p className="hero-signal-name">PERSONAL SIGNAL</p>
           <p className="hero-intro">Computational Neuroscience Ph.D.</p>
           <div className="hero-actions">
             <a className="signal-button signal-button-solid" href="#signal">

@@ -133,7 +133,6 @@ button {
 .site-nav,
 .network-state,
 .console-label,
-.hero-signal-name,
 .data-rail,
 .section-heading,
 .text-link,
@@ -256,13 +255,6 @@ button {
   height: 1px;
   margin-top: clamp(1.6rem, 3vw, 2.8rem);
   background: linear-gradient(90deg, var(--signal), var(--line), transparent);
-}
-
-.hero-signal-name {
-  margin: 1.45rem 0 0;
-  color: var(--signal);
-  font-size: 0.79rem;
-  letter-spacing: 0.36em;
 }
 
 .hero-intro {
@@ -1291,11 +1283,6 @@ button {
 
   .hero-copy h1 {
     font-size: clamp(4.2rem, 17.8vw, 6rem);
-  }
-
-  .hero-signal-name {
-    font-size: 0.68rem;
-    letter-spacing: 0.25em;
   }
 
   .hero-intro {
