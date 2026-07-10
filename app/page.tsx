@@ -69,6 +69,9 @@ export default function Home() {
           <a href="https://github.com/amazingang" target="_blank" rel="noreferrer">
             GITHUB ↗
           </a>
+          <a href="https://x.com/0xAA_Science" target="_blank" rel="noreferrer">
+            X ↗
+          </a>
         </nav>
         <p className="network-state" aria-label={`站点状态：${signalState}`}>
           <span aria-hidden="true" />
@@ -87,11 +90,7 @@ export default function Home() {
           </h1>
           <div className="hero-rule" aria-hidden="true" />
           <p className="hero-signal-name">PERSONAL SIGNAL</p>
-          <p className="hero-intro">
-            0xAA · 神经科学博士生 · 独立 Web3 教育者。
-            <br />
-            把灵感编译成界面，把噪声折叠成信号。
-          </p>
+          <p className="hero-intro">Computational Neuroscience Ph.D.</p>
           <div className="hero-actions">
             <a className="signal-button signal-button-solid" href="#signal">
               EXPLORE SIGNAL <span aria-hidden="true">↘</span>
@@ -157,20 +156,20 @@ export default function Home() {
           <div>
             <p className="console-label">
               <span aria-hidden="true" />
-              MANIFESTO / ACTIVE
+              终生学习 / LIFELONG LEARNING
             </p>
-            <h2 id="signal-heading">
-              BUILT FROM
+            <h2 id="signal-heading" className="manifesto-title">
+              终生
               <br />
-              <em>STATIC.</em>
+              <em>学习.</em>
             </h2>
           </div>
           <div className="manifesto-copy">
             <p>
-              这里把神经科学、Web3 与开源教育收束成同一束信号：实验、作品，以及那些还没有被定义的好奇心。
+              终生学习，是把好奇心变成长期实践：理解世界、分享知识、持续构建，并在变化中保持开放。
             </p>
             <p>
-              I compile sparks into interfaces and fold noise into signal — across neuroscience, Web3, and open-source education.
+              Lifelong learning turns curiosity into a durable practice: understand, share, build, and stay open to change.
             </p>
           </div>
         </div>
@@ -180,7 +179,7 @@ export default function Home() {
             <span>01</span>
             <div>
               <h3>EDU</h3>
-              <p>把复杂的 Web3 知识压缩成人人可进入的开源教程。</p>
+              <p>把复杂的区块链和AI知识压缩成人人可进入的开源教程。</p>
             </div>
             <strong aria-hidden="true">&lt;/&gt;</strong>
           </article>
@@ -195,10 +194,10 @@ export default function Home() {
           <article>
             <span>03</span>
             <div>
-              <h3>LABS</h3>
-              <p>在合约、零知识证明和新工具之间持续实验。</p>
+              <h3>MEME</h3>
+              <p>传播趣事并从中赚钱。</p>
             </div>
-            <strong aria-hidden="true">0x</strong>
+            <strong aria-hidden="true">$$</strong>
           </article>
         </div>
       </section>
@@ -212,7 +211,7 @@ export default function Home() {
           <div>
             <p className="console-label">
               <span aria-hidden="true" />
-              PINNED ON GITHUB / AMAZINGANG
+              GITHUB / PINNED + PERSONAL PROJECTS
             </p>
             <h2 id="work-heading">
               OPEN
@@ -225,43 +224,85 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="repo-grid">
-          <a className="repo-card repo-card-featured" href="https://github.com/AmazingAng/WTF-Solidity" target="_blank" rel="noreferrer">
-            <div className="repo-card-topline">
-              <span>EDUCATION / WEB3</span>
-              <span>14K ★</span>
-            </div>
-            <h3>WTF-Solidity</h3>
-            <p>面向初学者的 Solidity 极简入门教程，也提供英文内容。</p>
-            <span className="repo-arrow" aria-hidden="true">↗</span>
-          </a>
-          <a className="repo-card" href="https://github.com/WTFAcademy/WTF-Ethers" target="_blank" rel="noreferrer">
-            <div className="repo-card-topline">
-              <span>PINNED / ETHERS.JS</span>
-              <span>3.5K ★</span>
-            </div>
-            <h3>WTF-Ethers</h3>
-            <p>把 ethers.js 的细节拆解成可持续学习的 Web3 路线。</p>
-            <span className="repo-arrow" aria-hidden="true">↗</span>
-          </a>
-          <a className="repo-card" href="https://github.com/WTFAcademy/WTF-zk" target="_blank" rel="noreferrer">
-            <div className="repo-card-topline">
-              <span>PINNED / ZK</span>
-              <span>2.1K ★</span>
-            </div>
-            <h3>WTF-zk</h3>
-            <p>一套面向实践者的零知识证明入门教程。</p>
-            <span className="repo-arrow" aria-hidden="true">↗</span>
-          </a>
-          <a className="repo-card" href="https://github.com/AmazingAng/WTF-DeepRL" target="_blank" rel="noreferrer">
-            <div className="repo-card-topline">
-              <span>RESEARCH / PYTORCH</span>
-              <span>DEEP RL</span>
-            </div>
-            <h3>WTF-DeepRL</h3>
-            <p>以 PyTorch 实现深度强化学习算法，让研究与构建相遇。</p>
-            <span className="repo-arrow" aria-hidden="true">↗</span>
-          </a>
+        <div className="repo-collection">
+          <div className="repo-collection-heading">
+            <span>01 / PINNED PROJECTS</span>
+            <span aria-hidden="true" />
+          </div>
+          <div className="repo-grid repo-grid-pinned">
+            <a className="repo-card repo-card-featured" href="https://github.com/AmazingAng/WTF-Solidity" target="_blank" rel="noreferrer">
+              <div className="repo-card-topline">
+                <span>EDUCATION / WEB3</span>
+                <span>14,010 ★</span>
+              </div>
+              <h3>WTF-Solidity</h3>
+              <p>面向初学者的 Solidity 极简入门教程，也提供英文内容。</p>
+              <span className="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a className="repo-card" href="https://github.com/WTFAcademy/WTF-Ethers" target="_blank" rel="noreferrer">
+              <div className="repo-card-topline">
+                <span>PINNED / ETHERS.JS</span>
+                <span>3,527 ★</span>
+              </div>
+              <h3>WTF-Ethers</h3>
+              <p>把 ethers.js 的细节拆解成可持续学习的 Web3 路线。</p>
+              <span className="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a className="repo-card" href="https://github.com/WTFAcademy/WTF-zk" target="_blank" rel="noreferrer">
+              <div className="repo-card-topline">
+                <span>PINNED / ZK</span>
+                <span>2,124 ★</span>
+              </div>
+              <h3>WTF-zk</h3>
+              <p>一套面向实践者的零知识证明入门教程。</p>
+              <span className="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a className="repo-card" href="https://github.com/AmazingAng/WTF-DeepRL" target="_blank" rel="noreferrer">
+              <div className="repo-card-topline">
+                <span>PINNED / DEEP RL</span>
+                <span>316 ★</span>
+              </div>
+              <h3>WTF-DeepRL</h3>
+              <p>以 PyTorch 实现深度强化学习算法，让研究与构建相遇。</p>
+              <span className="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </div>
+
+        <div className="repo-collection">
+          <div className="repo-collection-heading">
+            <span>02 / PERSONAL PROJECTS</span>
+            <span aria-hidden="true" />
+          </div>
+          <div className="repo-grid repo-grid-personal">
+            <a className="repo-card" href="https://github.com/AmazingAng/PolyWorld" target="_blank" rel="noreferrer">
+              <div className="repo-card-topline">
+                <span>PERSONAL / POLYMARKET</span>
+                <span>179 ★</span>
+              </div>
+              <h3>PolyWorld</h3>
+              <p>实时预测市场可视化仪表盘，用交互式世界地图观察 Polymarket。</p>
+              <span className="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a className="repo-card" href="https://github.com/AmazingAng/auth2api" target="_blank" rel="noreferrer">
+              <div className="repo-card-topline">
+                <span>PERSONAL / AI INFRA</span>
+                <span>524 ★</span>
+              </div>
+              <h3>auth2api</h3>
+              <p>轻量 OAuth 到 OpenAI-compatible API 的代理工具。</p>
+              <span className="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a className="repo-card" href="https://github.com/xapi-labs/xapi-cli" target="_blank" rel="noreferrer">
+              <div className="repo-card-topline">
+                <span>PERSONAL / AGENT CLI</span>
+                <span>11 ★</span>
+              </div>
+              <h3>xapi-cli</h3>
+              <p>面向 Agent 的 xAPI 命令行工具，用来发现与调用能力和 API。</p>
+              <span className="repo-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
         </div>
       </section>
 
@@ -297,6 +338,9 @@ export default function Home() {
         <span>© 0xAA / PERSONAL NODE</span>
         <a href="https://github.com/amazingang" target="_blank" rel="noreferrer">
           GITHUB @AMAZINGANG ↗
+        </a>
+        <a href="https://x.com/0xAA_Science" target="_blank" rel="noreferrer">
+          X @0XAA_SCIENCE ↗
         </a>
         <button type="button" onClick={triggerPulse}>
           REBOOT SIGNAL ↺

@@ -32,6 +32,13 @@ test("server-renders the 0xaa signal homepage", async () => {
   assert.match(html, /<title>0xaa\.xyz — Personal Signal<\/title>/i);
   assert.match(html, /PERSONAL SIGNAL/);
   assert.match(html, /NEUROSCIENCE × WEB3/);
+  assert.match(html, /Computational Neuroscience Ph\.D\./);
+  assert.match(html, /终生学习/);
+  assert.match(html, /MEME/);
+  assert.match(html, /PolyWorld/);
+  assert.match(html, /auth2api/);
+  assert.match(html, /xapi-cli/);
+  assert.match(html, /https:\/\/x\.com\/0xAA_Science/);
   assert.match(html, /class="portrait-particle-canvas"/);
   assert.match(html, /POINT CLOUD \/ LOADING/);
   assert.match(html, /property="og:image" content="https:\/\/0xaa\.xyz\/og\.png"/);

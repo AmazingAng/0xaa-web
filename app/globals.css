@@ -655,6 +655,11 @@ button {
   text-shadow: 0.035em 0 rgba(255, 255, 255, 0.2);
 }
 
+.manifesto-title,
+.manifesto-title em {
+  letter-spacing: -0.025em;
+}
+
 .manifesto-copy {
   max-width: 32rem;
   padding-bottom: 0.25rem;
@@ -764,13 +769,54 @@ button {
   font-size: 1rem;
 }
 
+.repo-collection {
+  margin-top: clamp(3.6rem, 7vw, 6.5rem);
+}
+
+.repo-collection + .repo-collection {
+  margin-top: clamp(3.5rem, 7vw, 6.5rem);
+}
+
+.repo-collection-heading {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.repo-collection-heading span:first-child {
+  white-space: nowrap;
+}
+
+.repo-collection-heading span:last-child {
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 .repo-grid {
   display: grid;
   grid-template-columns: 1.06fr 0.94fr;
   gap: 1px;
-  margin-top: clamp(3.6rem, 7vw, 6.5rem);
+  margin-top: 1.25rem;
   border: 1px solid var(--line);
   background: var(--line);
+}
+
+.repo-grid-personal {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.repo-grid-personal .repo-card {
+  min-height: 18rem;
+}
+
+.repo-grid-personal .repo-card h3 {
+  font-size: clamp(2.55rem, 3.8vw, 4.35rem);
 }
 
 .repo-card {

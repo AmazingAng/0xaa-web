@@ -35,6 +35,8 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "0xaa.xyz — Personal Signal",
       description: "A monochrome personal signal from the edge of the network.",
       images: ["/og.png"],
+      creator: "@0xAA_Science",
+      site: "@0xAA_Science",
     },
   };
 }
