@@ -39,6 +39,7 @@ test("server-renders the 0xaa signal homepage", async () => {
   assert.match(html, /auth2api/);
   assert.match(html, /xapi-cli/);
   assert.match(html, /https:\/\/x\.com\/0xAA_Science/);
+  assert.match(html, /class="portrait-stage"/);
   assert.match(html, /class="portrait-particle-canvas"/);
   assert.match(html, /POINT CLOUD \/ LOADING/);
   assert.match(html, /property="og:image" content="https:\/\/0xaa\.xyz\/og\.png"/);

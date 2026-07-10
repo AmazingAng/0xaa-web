@@ -200,18 +200,20 @@ button {
 
 .hero-console {
   display: grid;
-  grid-template-columns: minmax(0, 0.78fr) minmax(23rem, 1.22fr);
-  grid-template-rows: minmax(38rem, 1fr) auto auto;
-  column-gap: clamp(2rem, 6vw, 7.5rem);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(42rem, 1fr) auto auto;
   min-height: calc(100svh - 4.5rem);
-  padding-block: clamp(2.2rem, 5vw, 5rem) 2rem;
+  padding-block: clamp(1.5rem, 3.5vw, 3.25rem) 1rem;
 }
 
 .hero-copy {
   position: relative;
-  z-index: 2;
-  align-self: center;
-  padding-block: 3rem;
+  z-index: 5;
+  grid-column: 1;
+  grid-row: 1;
+  width: min(23rem, 28vw);
+  align-self: end;
+  padding-bottom: clamp(4.5rem, 9vh, 7rem);
 }
 
 .console-label {
@@ -234,12 +236,12 @@ button {
 .hero-copy h1 {
   display: flex;
   flex-wrap: wrap;
-  margin: clamp(1.8rem, 4vw, 3.6rem) 0 0;
+  margin: 1.15rem 0 0;
   color: var(--signal);
   font-family: var(--display);
-  font-size: clamp(5rem, 9.4vw, 10.6rem);
+  font-size: clamp(4.2rem, 6.5vw, 7.4rem);
   font-weight: 650;
-  line-height: 0.76;
+  line-height: 0.8;
   letter-spacing: -0.085em;
 }
 
@@ -251,25 +253,25 @@ button {
 }
 
 .hero-rule {
-  width: min(100%, 26rem);
+  width: min(100%, 12rem);
   height: 1px;
-  margin-top: clamp(1.6rem, 3vw, 2.8rem);
+  margin-top: 1.15rem;
   background: linear-gradient(90deg, var(--signal), var(--line), transparent);
 }
 
 .hero-intro {
-  max-width: 31rem;
-  margin: 1.55rem 0 0;
+  max-width: 21rem;
+  margin: 1.15rem 0 0;
   color: var(--muted);
-  font-size: 0.96rem;
-  line-height: 1.9;
+  font-size: 0.88rem;
+  line-height: 1.75;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
-  margin-top: 2.15rem;
+  margin-top: 1.45rem;
 }
 
 .signal-button {
@@ -310,18 +312,51 @@ button {
 .hero-portrait {
   position: relative;
   z-index: 1;
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 1;
-  min-height: clamp(35rem, 52vw, 48rem);
+  min-height: clamp(42rem, calc(100svh - 12rem), 57rem);
+  isolation: isolate;
+}
+
+.hero-portrait::before {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: min(58vw, 56rem);
+  aspect-ratio: 1;
+  border: 1px solid var(--line-faint);
+  border-radius: 50%;
+  box-shadow: 0 0 0 3.5rem rgba(255, 255, 255, 0.012), 0 0 0 8rem rgba(255, 255, 255, 0.008);
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.hero-portrait::after {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line), transparent);
+  content: "";
+}
+
+.portrait-stage {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  width: clamp(28rem, 44vw, 42rem);
+  aspect-ratio: 352 / 400;
+  transform: translate(-50%, -50%);
 }
 
 .portrait-frame {
   position: absolute;
   z-index: 2;
-  right: 15%;
-  bottom: 1%;
-  width: min(79%, 34rem);
-  aspect-ratio: 352 / 400;
+  inset: 0;
   overflow: hidden;
   border: 1px solid rgba(240, 241, 241, 0.32);
   background: #060707;
@@ -440,23 +475,23 @@ button {
 .portrait-grid-overlay {
   position: absolute;
   z-index: 0;
-  inset: 4% 0 8% 5%;
-  opacity: 0.5;
+  inset: -8% -15%;
+  opacity: 0.42;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 4.2rem 4.2rem;
-  mask-image: linear-gradient(90deg, transparent, black 36%, black 86%, transparent);
+  mask-image: radial-gradient(circle at center, black 0 42%, transparent 76%);
 }
 
 .portrait-data-trail {
   position: absolute;
   z-index: 1;
-  top: 10%;
-  right: -7%;
-  width: 45%;
-  height: 80%;
-  opacity: 0.75;
+  top: 8%;
+  right: -19%;
+  width: 49%;
+  height: 84%;
+  opacity: 0.68;
   background:
     radial-gradient(circle at 10% 13%, rgba(255, 255, 255, 0.92) 0 1px, transparent 1.8px),
     radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.8px),
@@ -480,20 +515,20 @@ button {
 }
 
 .portrait-meta-top {
-  top: 6%;
-  left: 2%;
+  top: -1.5rem;
+  left: 0;
 }
 
 .portrait-meta-bottom {
-  right: 1%;
-  bottom: 4%;
+  right: -1.25rem;
+  bottom: 2%;
   transform: rotate(-90deg) translateX(100%);
   transform-origin: bottom right;
 }
 
 .portrait-axis {
-  bottom: 6%;
-  left: 3%;
+  bottom: 5%;
+  left: -4rem;
   display: grid;
   gap: 0.35rem;
   color: var(--steel);
@@ -506,9 +541,10 @@ button {
   grid-template-columns: 1fr auto;
   gap: 1rem;
   align-items: center;
-  min-height: 5.5rem;
-  margin-top: -1.4rem;
+  min-height: 3.6rem;
+  margin-top: 0;
   border-top: 1px solid var(--line);
+  opacity: 0.72;
 }
 
 .wave-axis {
@@ -567,7 +603,7 @@ button {
   grid-template-columns: repeat(3, 1fr) auto;
   gap: 1rem;
   align-items: center;
-  min-height: 4.2rem;
+  min-height: 3.6rem;
   border-top: 1px solid var(--line-faint);
   color: var(--muted);
   font-size: 0.55rem;
@@ -1137,21 +1173,28 @@ button {
 
 @media (max-width: 980px) {
   .hero-console {
-    grid-template-columns: minmax(0, 0.88fr) minmax(20rem, 1.12fr);
-    column-gap: 2rem;
+    grid-template-rows: minmax(38rem, 1fr) auto auto;
+  }
+
+  .hero-copy {
+    width: min(21rem, 30vw);
+    padding-bottom: clamp(4rem, 8vh, 5.5rem);
   }
 
   .hero-copy h1 {
-    font-size: clamp(4.7rem, 10.4vw, 8rem);
+    font-size: clamp(4rem, 6.3vw, 5.8rem);
   }
 
   .hero-portrait {
-    min-height: 35rem;
+    min-height: 39rem;
   }
 
-  .portrait-frame {
-    width: 87%;
-    right: 7%;
+  .portrait-stage {
+    width: clamp(25rem, 50vw, 37rem);
+  }
+
+  .hero-portrait::before {
+    width: min(68vw, 48rem);
   }
 
   .manifesto-grid {
@@ -1171,34 +1214,39 @@ button {
 
   .hero-console {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto minmax(27rem, 1fr) auto auto;
     min-height: auto;
-    padding-top: 2.2rem;
+    padding-top: 1.25rem;
   }
 
   .hero-copy {
-    padding-block: 1.7rem 2.8rem;
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    padding-block: 1.25rem 2rem;
   }
 
   .hero-copy h1 {
-    font-size: clamp(4.8rem, 17.5vw, 7.7rem);
+    font-size: clamp(4.5rem, 15.5vw, 6.7rem);
   }
 
   .hero-portrait {
     grid-column: 1;
     grid-row: 2;
-    min-height: min(126vw, 43rem);
+    min-height: min(112vw, 40rem);
   }
 
-  .portrait-frame {
-    right: 11%;
-    bottom: 0;
-    width: min(78%, 29rem);
+  .portrait-stage {
+    width: min(82vw, 29rem);
+  }
+
+  .hero-portrait::before {
+    width: min(102vw, 39rem);
   }
 
   .signal-waveband {
     grid-row: 3;
-    margin-top: 1rem;
+    margin-top: 0;
   }
 
   .data-rail {
@@ -1282,7 +1330,7 @@ button {
   }
 
   .hero-copy h1 {
-    font-size: clamp(4.2rem, 17.8vw, 6rem);
+    font-size: clamp(4rem, 16.5vw, 5.5rem);
   }
 
   .hero-intro {
@@ -1295,12 +1343,11 @@ button {
   }
 
   .hero-portrait {
-    min-height: 118vw;
+    min-height: 108vw;
   }
 
-  .portrait-frame {
-    right: 9%;
-    width: 82%;
+  .portrait-stage {
+    width: min(84vw, 26rem);
   }
 
   .portrait-meta-bottom,

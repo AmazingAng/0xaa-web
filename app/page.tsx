@@ -106,16 +106,18 @@ export default function Home() {
         </div>
 
         <div className="hero-portrait" aria-label="0xaa 的 Three.js 粒子头像">
-          <span className="portrait-grid-overlay" aria-hidden="true" />
-          <span className="portrait-data-trail" aria-hidden="true" />
-          <div className="portrait-frame">
-            <ParticlePortrait pulseSequence={pulseSequence} />
-          </div>
-          <p className="portrait-meta portrait-meta-top">SCAN / 0001</p>
-          <p className="portrait-meta portrait-meta-bottom">PKU · SG · 0xAA</p>
-          <div className="portrait-axis" aria-hidden="true">
-            <span>X / 071</span>
-            <span>Y / 402</span>
+          <div className="portrait-stage">
+            <span className="portrait-grid-overlay" aria-hidden="true" />
+            <span className="portrait-data-trail" aria-hidden="true" />
+            <div className="portrait-frame">
+              <ParticlePortrait pulseSequence={pulseSequence} />
+            </div>
+            <p className="portrait-meta portrait-meta-top">SCAN / 0001</p>
+            <p className="portrait-meta portrait-meta-bottom">PKU · SG · 0xAA</p>
+            <div className="portrait-axis" aria-hidden="true">
+              <span>X / 071</span>
+              <span>Y / 402</span>
+            </div>
           </div>
         </div>
 
