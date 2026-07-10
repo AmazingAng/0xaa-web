@@ -734,6 +734,41 @@ button {
   line-height: 1.75;
 }
 
+.protocol-project {
+  display: grid;
+  gap: 0.16rem;
+  width: fit-content;
+  margin-top: 1rem;
+  padding-top: 0.72rem;
+  border-top: 1px solid rgba(240, 241, 241, 0.18);
+  color: var(--silver);
+  text-decoration: none;
+  transition: border-color 180ms ease, color 180ms ease;
+}
+
+.protocol-project span,
+.protocol-project em {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  line-height: 1.45;
+}
+
+.protocol-project em {
+  color: var(--steel);
+  letter-spacing: 0.03em;
+}
+
+.protocol-project:hover {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+
+.protocol-project:hover em {
+  color: var(--silver);
+}
+
 .protocol-list strong {
   position: absolute;
   right: 1rem;

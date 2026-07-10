@@ -180,6 +180,10 @@ export default function Home() {
             <div>
               <h3>EDU</h3>
               <p>把复杂的区块链和AI知识压缩成人人可进入的开源教程。</p>
+              <a className="protocol-project" href="https://wtf.academy" target="_blank" rel="noreferrer">
+                <span>PROJECT / WTF ACADEMY</span>
+                <em>wtf.academy ↗</em>
+              </a>
             </div>
             <strong aria-hidden="true">&lt;/&gt;</strong>
           </article>
@@ -188,6 +192,10 @@ export default function Home() {
             <div>
               <h3>NEURO &amp; AI</h3>
               <p>从神经科学出发，持续追问学习、智能与行为。</p>
+              <a className="protocol-project" href="https://xapi.to" target="_blank" rel="noreferrer">
+                <span>PROJECT / xAPI</span>
+                <em>xapi.to ↗</em>
+              </a>
             </div>
             <strong aria-hidden="true">∿</strong>
           </article>
