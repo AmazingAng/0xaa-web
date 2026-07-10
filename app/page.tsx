@@ -186,7 +186,7 @@ export default function Home() {
           <article>
             <span>02</span>
             <div>
-              <h3>NEURO</h3>
+              <h3>NEURO &amp; AI</h3>
               <p>从神经科学出发，持续追问学习、智能与行为。</p>
             </div>
             <strong aria-hidden="true">∿</strong>
