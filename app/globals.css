@@ -326,7 +326,7 @@ button {
 .portrait-frame {
   position: absolute;
   z-index: 2;
-  right: 5%;
+  right: 15%;
   bottom: 1%;
   width: min(79%, 34rem);
   aspect-ratio: 352 / 400;
@@ -1094,7 +1094,7 @@ button {
 
   .portrait-frame {
     width: 87%;
-    right: 0;
+    right: 7%;
   }
 
   .manifesto-grid {
@@ -1134,7 +1134,7 @@ button {
   }
 
   .portrait-frame {
-    right: 4%;
+    right: 11%;
     bottom: 0;
     width: min(78%, 29rem);
   }
@@ -1247,7 +1247,7 @@ button {
   }
 
   .portrait-frame {
-    right: 2%;
+    right: 9%;
     width: 82%;
   }
 

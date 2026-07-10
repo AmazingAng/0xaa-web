@@ -83,8 +83,7 @@ export default function Home() {
             NODE_00 / NEUROSCIENCE × WEB3
           </p>
           <h1 id="hero-heading">
-            <span>0xaa</span>
-            <span>.xyz</span>
+            <span>0xAA</span>
           </h1>
           <div className="hero-rule" aria-hidden="true" />
           <p className="hero-signal-name">PERSONAL SIGNAL</p>
