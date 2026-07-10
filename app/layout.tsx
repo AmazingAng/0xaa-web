@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
       url: "/",
       images: [
         {
-          url: "/og-monochrome.png",
+          url: "/og.png",
           width: 1732,
           height: 908,
           alt: "0xaa.xyz Personal Signal",
@@ -34,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: "summary_large_image",
       title: "0xaa.xyz — Personal Signal",
       description: "A monochrome personal signal from the edge of the network.",
-      images: ["/og-monochrome.png"],
+      images: ["/og.png"],
     },
   };
 }

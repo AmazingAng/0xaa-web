@@ -11,6 +11,7 @@ type ParticleSeed = {
   opacity: number;
   tone: number;
   phase: number;
+  rank: number;
 };
 
 type ParticlePortraitProps = {
@@ -50,9 +51,10 @@ const fragmentShader = `
   varying float vOpacity;
 
   void main() {
-    float distanceToCenter = length(gl_PointCoord - vec2(0.5));
-    float edge = 1.0 - smoothstep(0.18, 0.5, distanceToCenter);
-    float core = 1.0 - smoothstep(0.0, 0.22, distanceToCenter);
+    vec2 pixel = abs(gl_PointCoord - vec2(0.5));
+    float ledDistance = max(pixel.x, pixel.y);
+    float edge = 1.0 - smoothstep(0.31, 0.5, ledDistance);
+    float core = 1.0 - smoothstep(0.0, 0.2, ledDistance);
     float alpha = edge * vOpacity;
 
     gl_FragColor = vec4(vColor + core * 0.08, alpha);
@@ -88,6 +90,7 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     const geometry = new THREE.BufferGeometry();
     const material = new THREE.ShaderMaterial({
       transparent: true,
+      depthTest: false,
       depthWrite: false,
       blending: THREE.NormalBlending,
       uniforms: {
@@ -254,10 +257,10 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
       if (disposed || portraitReady || !sampleContext || image.naturalWidth === 0) return;
 
       try {
-        const sampleSize = 148;
+        const sampleSize = 168;
         const isCompact = window.innerWidth < 620;
-        const step = isCompact ? 3 : 2;
-        const maximum = isCompact ? 430 : 920;
+        const step = 2;
+        const maximum = isCompact ? 760 : 1650;
         const candidates: ParticleSeed[] = [];
 
         sampleCanvas.width = sampleSize;
@@ -268,13 +271,21 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
         for (let y = 1; y < sampleSize - 1; y += step) {
           for (let x = 1; x < sampleSize - 1; x += step) {
             const pixel = (y * sampleSize + x) * 4;
+            const left = (y * sampleSize + x - 1) * 4;
             const right = (y * sampleSize + x + 1) * 4;
+            const above = ((y - 1) * sampleSize + x) * 4;
             const below = ((y + 1) * sampleSize + x) * 4;
             const luminance =
               (0.2126 * imageData[pixel] + 0.7152 * imageData[pixel + 1] + 0.0722 * imageData[pixel + 2]) /
               255;
             const rightLuminance =
               (0.2126 * imageData[right] + 0.7152 * imageData[right + 1] + 0.0722 * imageData[right + 2]) /
+              255;
+            const leftLuminance =
+              (0.2126 * imageData[left] + 0.7152 * imageData[left + 1] + 0.0722 * imageData[left + 2]) /
+              255;
+            const aboveLuminance =
+              (0.2126 * imageData[above] + 0.7152 * imageData[above + 1] + 0.0722 * imageData[above + 2]) /
               255;
             const belowLuminance =
               (0.2126 * imageData[below] + 0.7152 * imageData[below + 1] + 0.0722 * imageData[below + 2]) /
@@ -283,27 +294,29 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
             const ink = alpha * Math.pow(Math.max(0, (0.95 - luminance) / 0.95), 0.74);
             const edge = Math.min(
               1,
-              (Math.abs(luminance - rightLuminance) + Math.abs(luminance - belowLuminance)) * 1.65,
+              (Math.abs(leftLuminance - rightLuminance) + Math.abs(aboveLuminance - belowLuminance)) * 1.32,
             );
-            const density = Math.min(0.94, ink * 0.78 + edge * 0.68);
+            const body = Math.max(0, ink - 0.67) * 0.18;
+            const density = Math.min(0.96, edge * 0.97 + body);
             const chance = stableHash(x, y);
 
-            if (density < 0.09 || chance > density) continue;
+            if (density < 0.1 || chance > density) continue;
 
-            const edgeWeight = Math.min(1, edge * 1.7);
+            const edgeWeight = Math.min(1, edge * 1.55);
             candidates.push({
-              nx: (x + 0.5 + (chance - 0.5) * 1.15) / sampleSize,
-              ny: (y + 0.5 + (stableHash(y, x) - 0.5) * 1.15) / sampleSize,
+              nx: (x + 0.5) / sampleSize,
+              ny: (y + 0.5) / sampleSize,
               depth: (stableHash(x + 97, y + 43) - 0.5) * 0.18,
-              size: 1.35 + edgeWeight * 1.45 + stableHash(x + 7, y + 11) * 0.65,
-              opacity: 0.38 + edgeWeight * 0.52 + ink * 0.1,
-              tone: 0.38 + edgeWeight * 0.53 + ink * 0.12,
+              size: 1.02 + edgeWeight * 1.52 + stableHash(x + 7, y + 11) * 0.4,
+              opacity: 0.24 + edgeWeight * 0.68 + body * 0.2,
+              tone: 0.3 + edgeWeight * 0.64 + body * 0.15,
               phase: stableHash(x + 211, y + 619) * Math.PI * 2,
+              rank: edge * 0.9 + body * 0.08 + stableHash(x + 641, y + 73) * 0.02,
             });
           }
         }
 
-        candidates.sort((first, second) => first.phase - second.phase);
+        candidates.sort((first, second) => second.rank - first.rank);
         seeds.push(...candidates.slice(0, maximum));
         portraitReady = seeds.length > 0;
         if (!portraitReady) return;
