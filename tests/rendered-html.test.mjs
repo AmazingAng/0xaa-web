@@ -23,26 +23,28 @@ async function render() {
   );
 }
 
-test("server-renders the 0xaa signal homepage", async () => {
+test("server-renders the neural monolith homepage", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>0xaa\.xyz — Personal Signal<\/title>/i);
-  assert.doesNotMatch(html, /PERSONAL SIGNAL/);
-  assert.match(html, /NEUROSCIENCE × WEB3/);
+  assert.match(html, /<title>0xAA — Neural Monolith<\/title>/i);
+  assert.match(html, /NODE_00 \/ NEURAL MONOLITH/);
   assert.match(html, /Computational Neuroscience Ph\.D\./);
   assert.match(html, /终生学习/);
+  assert.match(html, /NEURO &amp; AI/);
+  assert.match(html, /WTF Academy/);
+  assert.match(html, /xAPI/);
   assert.match(html, /MEME/);
   assert.match(html, /PolyWorld/);
   assert.match(html, /auth2api/);
   assert.match(html, /xapi-cli/);
   assert.match(html, /https:\/\/x\.com\/0xAA_Science/);
-  assert.match(html, /class="portrait-stage"/);
+  assert.match(html, /class="portrait-slab"/);
   assert.match(html, /class="portrait-particle-canvas"/);
-  assert.match(html, /POINT CLOUD \/ LOADING/);
-  assert.match(html, /property="og:image" content="https:\/\/0xaa\.xyz\/og\.png"/);
+  assert.match(html, /POINT CLOUD \/ INITIALIZING/);
+  assert.match(html, /property="og:image" content="https:\/\/0xaa\.xyz\/og-monolith\.png"/);
   assert.doesNotMatch(html, /src="\/0xaa\.png"/);
 });
 
@@ -62,6 +64,10 @@ test("ships a precomputed point cloud instead of runtime image sampling", async 
   assert.equal(pointCloud.points.length, pointCloud.lod.desktop * pointCloud.stride);
   assert.match(component, /from "\.\/generated\/portrait-points\.json"/);
   assert.doesNotMatch(component, /getImageData|new Image\(|0xaa\.png/);
+  assert.match(component, /aPhase/);
+  assert.match(component, /uPulseProgress/);
+  assert.match(component, /geometry\.setDrawRange/);
+  assert.match(component, /prefers-reduced-motion/);
   assert.match(generator, /static\/0xaa\.png/);
   assert.match(packageJson, /"generate:portrait": "node scripts\/generate-portrait-points\.mjs"/);
   assert.match(packageJson, /"build": "npm run generate:portrait/);

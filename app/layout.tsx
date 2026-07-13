@@ -10,31 +10,31 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(origin),
-    title: "0xaa.xyz — Personal Signal",
-    description: "A monochrome personal signal from the edge of the network.",
+    title: "0xAA — Neural Monolith",
+    description: "A personal node for learning, intelligence, and open systems.",
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg",
     },
     openGraph: {
-      title: "0xaa.xyz — Personal Signal",
-      description: "A monochrome personal signal from the edge of the network.",
+      title: "0xAA — Neural Monolith",
+      description: "A personal node for learning, intelligence, and open systems.",
       type: "website",
       url: "/",
       images: [
         {
-          url: "/og.png",
-          width: 1732,
-          height: 908,
-          alt: "0xaa.xyz Personal Signal",
+          url: "/og-monolith.png",
+          width: 1200,
+          height: 630,
+          alt: "0xAA Neural Monolith",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "0xaa.xyz — Personal Signal",
-      description: "A monochrome personal signal from the edge of the network.",
-      images: ["/og.png"],
+      title: "0xAA — Neural Monolith",
+      description: "A personal node for learning, intelligence, and open systems.",
+      images: ["/og-monolith.png"],
       creator: "@0xAA_Science",
       site: "@0xAA_Science",
     },
