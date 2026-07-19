@@ -1,112 +1,136 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-import ParticlePortrait from "./ParticlePortrait";
+import ModelSwitcher from "./ModelSwitcher";
+import OpeningGame, { type OpeningGameLanguage } from "./OpeningGame";
+
+const ParticlePortrait = dynamic(() => import("./ParticlePortrait"), { ssr: false });
+
+const GATE_CLEARED_KEY = "0xaa:gate-cleared";
+const LANGUAGE_KEY = "0xaa:lang";
 
 const pulseBars = [18, 42, 24, 68, 31, 82, 46, 27, 58, 38, 94, 52, 34, 71, 23, 49, 80, 41, 21, 60, 35, 74, 29, 47, 66, 36, 86, 45, 28, 63, 32, 76, 39, 26, 54, 33];
 
-const fields = [
-  {
-    index: "01",
-    eyebrow: "EDU / OPEN ACCESS",
-    name: "EDU",
-    copy: "把复杂的区块链和 AI 知识，压缩成人人可进入的开源教程。",
-    detail: "Open knowledge, made reachable.",
-    project: "WTF Academy",
-    href: "https://wtf.academy",
-    url: "wtf.academy",
-    mark: "<>"
-  },
-  {
-    index: "02",
-    eyebrow: "NEURO & AI / INQUIRY",
-    name: "NEURO & AI",
-    copy: "从神经科学出发，持续追问学习、智能与行为。",
-    detail: "Learning, intelligence, behavior.",
-    project: "xAPI",
-    href: "https://xapi.to",
-    url: "xapi.to",
-    mark: "∿"
-  },
-  {
-    index: "03",
-    eyebrow: "MEME / DISTRIBUTION",
-    name: "MEME",
-    copy: "传播趣事，并从中赚钱。",
-    detail: "Humor / network / value.",
-    project: "FIELD NOTE",
-    href: "https://x.com/0xAA_Science",
-    url: "humor / network / value",
-    mark: "$$"
-  }
-];
+type Language = OpeningGameLanguage;
 
-const learningProjects = [
-  {
-    label: "EDUCATION / WEB3",
-    stars: "14,010 ★",
-    name: "WTF-Solidity",
-    note: "Solidity, made legible.",
-    detail: "面向初学者的 Solidity 极简入门教程，也提供英文内容。",
-    href: "https://github.com/AmazingAng/WTF-Solidity",
-    featured: true
-  },
-  {
-    label: "ETHERS.JS",
-    stars: "3,527 ★",
-    name: "WTF-Ethers",
-    note: "A practical route through ethers.js.",
-    detail: "把 ethers.js 的细节拆解成可持续学习的 Web3 路线。",
-    href: "https://github.com/WTFAcademy/WTF-Ethers"
-  },
-  {
-    label: "ZERO KNOWLEDGE",
-    stars: "2,124 ★",
-    name: "WTF-zk",
-    note: "Zero-knowledge, made approachable.",
-    detail: "一套面向实践者的零知识证明入门教程。",
-    href: "https://github.com/WTFAcademy/WTF-zk"
-  },
-  {
-    label: "DEEP RL",
-    stars: "316 ★",
-    name: "WTF-DeepRL",
-    note: "Reinforcement learning, built in PyTorch.",
-    detail: "以 PyTorch 实现深度强化学习算法，让研究与构建相遇。",
-    href: "https://github.com/AmazingAng/WTF-DeepRL"
-  }
-];
+type Field = {
+  name: string;
+  copy: string;
+  project?: string;
+  href?: string;
+};
 
-const personalProjects = [
-  {
-    label: "PREDICTION MARKETS",
-    stars: "179 ★",
-    name: "PolyWorld",
-    note: "A live map of prediction markets.",
-    detail: "实时预测市场可视化仪表盘，用交互式世界地图观察 Polymarket。",
-    href: "https://github.com/AmazingAng/PolyWorld"
-  },
-  {
-    label: "AI INFRA",
-    stars: "524 ★",
-    name: "auth2api",
-    note: "OAuth, translated into an OpenAI-compatible API.",
-    detail: "轻量 OAuth 到 OpenAI-compatible API 的代理工具。",
-    href: "https://github.com/AmazingAng/auth2api"
-  },
-  {
-    label: "AGENT CLI",
-    stars: "11 ★",
-    name: "xapi-cli",
-    note: "An agent-native command line for xAPI.",
-    detail: "面向 Agent 的 xAPI 命令行工具，用来发现与调用能力和 API。",
-    href: "https://github.com/xapi-labs/xapi-cli"
-  }
-];
+type ArchiveProject = {
+  stars: string;
+  name: string;
+  detail: string;
+  href: string;
+  featured?: boolean;
+};
 
-type ArchiveProject = (typeof learningProjects)[number] | (typeof personalProjects)[number];
+type SiteCopy = {
+  skipLink: string;
+  homeLabel: string;
+  navigationLabel: string;
+  languageLabel: string;
+  navigation: { fields: string; projects: string; connect: string };
+  hero: { portraitLabel: string; explore: string; pulseLabel: string };
+  fieldsHeading: { lead: string; accent: string };
+  archiveHeading: string;
+  archiveGroups: { learning: string; personal: string };
+  starsLabel: string;
+  connectHeading: string;
+  profileLabels: { github: string; scholar: string; publications: string };
+  fields: Field[];
+  learningProjects: ArchiveProject[];
+  personalProjects: ArchiveProject[];
+};
 
-function ArchiveCard({ project }: { project: ArchiveProject }) {
+const siteCopy: Record<Language, SiteCopy> = {
+  zh: {
+    skipLink: "跳至主要内容",
+    homeLabel: "回到 0xAA 首页",
+    navigationLabel: "页面导航",
+    languageLabel: "选择语言",
+    navigation: { fields: "领域", projects: "项目", connect: "联系" },
+    hero: { portraitLabel: "0xAA 的动态点云肖像", explore: "探索", pulseLabel: "扰动点云" },
+    fieldsHeading: { lead: "终生", accent: "学习." },
+    archiveHeading: "项目.",
+    archiveGroups: { learning: "学习", personal: "个人" },
+    starsLabel: "GitHub 星标数",
+    connectHeading: "联系.",
+    profileLabels: { github: "GITHUB", scholar: "GOOGLE SCHOLAR", publications: "论文发表" },
+    fields: [
+      {
+        name: "EDU",
+        copy: "把复杂的区块链和 AI 知识，压缩成人人可进入的开源教程。",
+        project: "WTF Academy",
+        href: "https://wtf.academy",
+      },
+      {
+        name: "NEURO & AI",
+        copy: "从神经科学出发，持续追问学习、智能与行为。",
+        project: "xAPI",
+        href: "https://xapi.to",
+      },
+      { name: "MEME", copy: "传播趣事，并从中赚钱。" },
+    ],
+    learningProjects: [
+      { stars: "14,010 ★", name: "WTF-Solidity", detail: "面向初学者的 Solidity 极简入门教程，也提供英文内容。", href: "https://github.com/AmazingAng/WTF-Solidity", featured: true },
+      { stars: "3,527 ★", name: "WTF-Ethers", detail: "把 ethers.js 的细节拆解成可持续学习的 Web3 路线。", href: "https://github.com/WTFAcademy/WTF-Ethers" },
+      { stars: "2,124 ★", name: "WTF-zk", detail: "一套面向实践者的零知识证明入门教程。", href: "https://github.com/WTFAcademy/WTF-zk" },
+      { stars: "316 ★", name: "WTF-DeepRL", detail: "以 PyTorch 实现深度强化学习算法，让研究与构建相遇。", href: "https://github.com/AmazingAng/WTF-DeepRL" },
+    ],
+    personalProjects: [
+      { stars: "179 ★", name: "PolyWorld", detail: "实时预测市场可视化仪表盘，用交互式世界地图观察 Polymarket。", href: "https://github.com/AmazingAng/PolyWorld" },
+      { stars: "524 ★", name: "auth2api", detail: "轻量 OAuth 到 OpenAI-compatible API 的代理工具。", href: "https://github.com/AmazingAng/auth2api" },
+      { stars: "11 ★", name: "xapi-cli", detail: "面向 Agent 的 xAPI 命令行工具，用来发现与调用能力和 API。", href: "https://github.com/xapi-labs/xapi-cli" },
+    ],
+  },
+  en: {
+    skipLink: "Skip to main content",
+    homeLabel: "Return to 0xAA home",
+    navigationLabel: "Page navigation",
+    languageLabel: "Choose language",
+    navigation: { fields: "FIELDS", projects: "PROJECTS", connect: "CONNECT" },
+    hero: { portraitLabel: "0xAA animated particle-cloud portrait", explore: "EXPLORE", pulseLabel: "Perturb particle portrait" },
+    fieldsHeading: { lead: "LIFELONG", accent: "LEARNING." },
+    archiveHeading: "PROJECTS.",
+    archiveGroups: { learning: "LEARNING", personal: "PERSONAL" },
+    starsLabel: "GitHub stars",
+    connectHeading: "CONNECT.",
+    profileLabels: { github: "GITHUB", scholar: "GOOGLE SCHOLAR", publications: "PUBLICATIONS" },
+    fields: [
+      {
+        name: "EDU",
+        copy: "Distill complex blockchain and AI knowledge into open-source tutorials anyone can access.",
+        project: "WTF Academy",
+        href: "https://wtf.academy",
+      },
+      {
+        name: "NEURO & AI",
+        copy: "From neuroscience, keep asking how learning, intelligence, and behavior emerge.",
+        project: "xAPI",
+        href: "https://xapi.to",
+      },
+      { name: "MEME", copy: "Share interesting things—and make a living from them." },
+    ],
+    learningProjects: [
+      { stars: "14,010 ★", name: "WTF-Solidity", detail: "A minimal Solidity primer for beginners, also available in English.", href: "https://github.com/AmazingAng/WTF-Solidity", featured: true },
+      { stars: "3,527 ★", name: "WTF-Ethers", detail: "A durable Web3 learning path that breaks down ethers.js.", href: "https://github.com/WTFAcademy/WTF-Ethers" },
+      { stars: "2,124 ★", name: "WTF-zk", detail: "A hands-on primer on zero-knowledge proofs.", href: "https://github.com/WTFAcademy/WTF-zk" },
+      { stars: "316 ★", name: "WTF-DeepRL", detail: "Deep reinforcement learning in PyTorch, where research meets building.", href: "https://github.com/AmazingAng/WTF-DeepRL" },
+    ],
+    personalProjects: [
+      { stars: "179 ★", name: "PolyWorld", detail: "A real-time prediction-market dashboard that maps Polymarket activity.", href: "https://github.com/AmazingAng/PolyWorld" },
+      { stars: "524 ★", name: "auth2api", detail: "A lightweight OAuth-to-OpenAI-compatible API proxy.", href: "https://github.com/AmazingAng/auth2api" },
+      { stars: "11 ★", name: "xapi-cli", detail: "A command-line xAPI tool for agents to discover and call capabilities and APIs.", href: "https://github.com/xapi-labs/xapi-cli" },
+    ],
+  },
+};
+
+function ArchiveCard({ project, starsLabel }: { project: ArchiveProject; starsLabel: string }) {
   return (
     <a
       className={`archive-card${"featured" in project && project.featured ? " archive-card-featured" : ""}`}
@@ -115,13 +139,11 @@ function ArchiveCard({ project }: { project: ArchiveProject }) {
       rel="noreferrer"
     >
       <div className="archive-card-meta">
-        <span>{project.label}</span>
-        <span>{project.stars}</span>
+        <span aria-label={starsLabel}>{project.stars}</span>
       </div>
       <div className="archive-card-core">
         <h3>{project.name}</h3>
-        <p>{project.note}</p>
-        <p className="archive-detail">{project.detail}</p>
+        <p>{project.detail}</p>
       </div>
       <span className="archive-arrow" aria-hidden="true">↗</span>
       <span className="archive-card-grid" aria-hidden="true" />
@@ -131,28 +153,13 @@ function ArchiveCard({ project }: { project: ArchiveProject }) {
 
 export default function Home() {
   const pulseTimerRef = useRef<number | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
   const [isPulsing, setIsPulsing] = useState(false);
   const [pulseSequence, setPulseSequence] = useState(0);
-  const [signalState, setSignalState] = useState("LISTENING");
-  const [clock, setClock] = useState("--:--:--");
-
-  useEffect(() => {
-    const updateClock = () => {
-      setClock(
-        new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Asia/Shanghai",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false
-        }).format(new Date())
-      );
-    };
-
-    updateClock();
-    const interval = window.setInterval(updateClock, 1000);
-    return () => window.clearInterval(interval);
-  }, []);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isHomeRevealed, setIsHomeRevealed] = useState(false);
+  const [language, setLanguage] = useState<Language>("zh");
+  const copy = siteCopy[language];
 
   useEffect(
     () => () => {
@@ -161,200 +168,214 @@ export default function Home() {
     []
   );
 
+  useEffect(() => {
+    if (!isUnlocked) return;
+
+    let revealFrame: number | null = null;
+    const mountFrame = window.requestAnimationFrame(() => {
+      revealFrame = window.requestAnimationFrame(() => setIsHomeRevealed(true));
+    });
+
+    return () => {
+      window.cancelAnimationFrame(mountFrame);
+      if (revealFrame !== null) window.cancelAnimationFrame(revealFrame);
+    };
+  }, [isUnlocked]);
+
+  useEffect(() => {
+    if (!isHomeRevealed) return;
+    const frame = window.requestAnimationFrame(() => mainRef.current?.focus({ preventScroll: true }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [isHomeRevealed]);
+
+  useEffect(() => {
+    document.documentElement.lang = language === "zh" ? "zh-CN" : "en";
+  }, [language]);
+
+  // Restore a previously-cleared gate and the saved language preference on
+  // mount. This runs as an effect (not a lazy initializer) because the
+  // component is server-rendered and reading sessionStorage/localStorage
+  // during render would cause a hydration mismatch. The one-time setState
+  // calls below are intentional: they sync React state with browser storage
+  // that isn't available during SSR/hydration.
+  useEffect(() => {
+    try {
+      const savedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
+      if (savedLanguage === "zh" || savedLanguage === "en") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring persisted state after hydration, not a derived-state anti-pattern
+        setLanguage(savedLanguage);
+      }
+    } catch {
+      // localStorage unavailable (e.g. privacy mode) — keep the default language.
+    }
+
+    try {
+      if (window.sessionStorage.getItem(GATE_CLEARED_KEY) === "1") {
+        setIsUnlocked(true);
+      }
+    } catch {
+      // sessionStorage unavailable — fall back to playing the opening game.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LANGUAGE_KEY, language);
+    } catch {
+      // Ignore write failures (e.g. storage disabled or full).
+    }
+  }, [language]);
+
   const triggerPulse = useCallback(() => {
     setPulseSequence((sequence) => sequence + 1);
     setIsPulsing(true);
-    setSignalState("DISTURBED");
 
     if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current);
     pulseTimerRef.current = window.setTimeout(() => {
       setIsPulsing(false);
-      setSignalState("LISTENING");
     }, 1000);
   }, []);
 
+  const unlockNode = useCallback(() => {
+    try {
+      window.sessionStorage.setItem(GATE_CLEARED_KEY, "1");
+    } catch {
+      // Ignore write failures (e.g. storage disabled) — the gate will just
+      // replay next visit.
+    }
+    setIsHomeRevealed(false);
+    setIsUnlocked(true);
+  }, []);
+
+  if (!isUnlocked) return <OpeningGame onComplete={unlockNode} language={language} onLanguageChange={setLanguage} />;
+
   return (
-    <main className={`monolith-site${isPulsing ? " is-pulsing" : ""}`} id="top">
+    <main ref={mainRef} tabIndex={-1} className={`monolith-site home-reveal${isPulsing ? " is-pulsing" : ""}${isHomeRevealed ? " is-revealed" : ""}`} id="top">
+      <div className="home-reveal-curtain" aria-hidden="true"><i /></div>
       <div className="ambient-grid" aria-hidden="true" />
       <div className="ambient-noise" aria-hidden="true" />
-      <a className="skip-link" href="#fields">跳至主要内容</a>
+      <a className="skip-link" href="#fields">{copy.skipLink}</a>
 
       <header className="monolith-header">
-        <a className="monolith-mark" href="#top" aria-label="回到 0xAA 首页">
+        <a className="monolith-mark" href="#top" aria-label={copy.homeLabel}>
           <span>0xAA</span>
           <i aria-hidden="true" />
-          <small>MONOLITH_01</small>
         </a>
-        <nav className="monolith-nav" aria-label="页面导航">
-          <a href="#fields">01 / FIELDS</a>
-          <a href="#archive">02 / ARCHIVE</a>
-          <a href="#transmit">03 / TRANSMIT</a>
+        <nav className="monolith-nav" aria-label={copy.navigationLabel}>
+          <a href="#fields">{copy.navigation.fields}</a>
+          <a href="#archive">{copy.navigation.projects}</a>
+          <a href="#connect">{copy.navigation.connect}</a>
         </nav>
         <div className="header-links">
           <a href="https://github.com/amazingang" target="_blank" rel="noreferrer">GH ↗</a>
           <a href="https://x.com/0xAA_Science" target="_blank" rel="noreferrer">X ↗</a>
+          <a href="https://scholar.google.com/citations?user=raXwI1QAAAAJ&hl=en" target="_blank" rel="noreferrer">SCHOLAR ↗</a>
+          <ModelSwitcher
+            activeModel="gpt-5-6-terra"
+            label={language === "zh" ? "切换模型主页" : "Switch model pages"}
+          />
+          <div className="language-switch" role="group" aria-label={copy.languageLabel}>
+            <button type="button" className="language-switch-button" aria-pressed={language === "zh"} data-active={language === "zh"} onClick={() => setLanguage("zh")}>中</button>
+            <button type="button" className="language-switch-button" aria-pressed={language === "en"} data-active={language === "en"} onClick={() => setLanguage("en")}>EN</button>
+          </div>
         </div>
       </header>
 
       <section className="monolith-hero" aria-labelledby="hero-heading">
         <div className="hero-crosshair" aria-hidden="true" />
-        <div className="hero-coordinate hero-coordinate-a" aria-hidden="true">X / 0.071</div>
-        <div className="hero-coordinate hero-coordinate-b" aria-hidden="true">Y / 0.402</div>
-        <div className="hero-coordinate hero-coordinate-c" aria-hidden="true">DEPTH / ∞</div>
 
-        <div className="hero-portrait" role="img" aria-label="0xAA 的动态点云肖像">
+        <div className="hero-portrait" role="img" aria-label={copy.hero.portraitLabel}>
           <div className="orbit-ring orbit-ring-a" aria-hidden="true" />
           <div className="orbit-ring orbit-ring-b" aria-hidden="true" />
           <div className="orbit-ring orbit-ring-c" aria-hidden="true" />
           <div className="hero-scanline" aria-hidden="true" />
-          <div className="portrait-slab">
-            <span className="slab-corner slab-corner-a" aria-hidden="true" />
-            <span className="slab-corner slab-corner-b" aria-hidden="true" />
-            <span className="slab-corner slab-corner-c" aria-hidden="true" />
-            <span className="slab-corner slab-corner-d" aria-hidden="true" />
+          <div className="portrait-field">
             <ParticlePortrait pulseSequence={pulseSequence} />
           </div>
-          <p className="portrait-caption portrait-caption-top">LIVE POINT CLOUD / 892 NODES</p>
-          <p className="portrait-caption portrait-caption-side">SCANNING / 001</p>
         </div>
 
         <div className="hero-identity">
-          <p className="eyebrow"><span aria-hidden="true" />NODE_00 / NEURAL MONOLITH</p>
           <h1 id="hero-heading">0xAA</h1>
-          <p className="hero-role">Computational Neuroscience Ph.D.</p>
-          <p className="hero-thesis">A personal node for learning, intelligence, and open systems.</p>
           <div className="hero-actions">
-            <a className="primary-action" href="#fields">ENTER THE FIELDS <span aria-hidden="true">↓</span></a>
-            <button className="secondary-action" type="button" onClick={triggerPulse} aria-pressed={isPulsing}>
-              DISTURB THE FIELD <span aria-hidden="true">✦</span>
+            <a className="primary-action" href="#fields">{copy.hero.explore} <span aria-hidden="true">↓</span></a>
+            <button className="secondary-action" type="button" onClick={triggerPulse} aria-label={copy.hero.pulseLabel} aria-pressed={isPulsing}>
+              <span aria-hidden="true">✦</span>
             </button>
           </div>
         </div>
 
-        <aside className="hero-readout" aria-label="节点实时读数">
-          <div>
-            <span>STATE</span>
-            <strong>{signalState}</strong>
-          </div>
-          <div>
-            <span>LOCATION</span>
-            <strong>SG / UTC+08</strong>
-          </div>
-          <div>
-            <span>LOCAL TIME</span>
-            <strong>{clock}</strong>
-          </div>
-        </aside>
-
         <div className="hero-wave" aria-hidden="true">
-          <span className="wave-label">FIELD / 001</span>
           <div>
             {pulseBars.map((height, index) => (
               <span key={`${height}-${index}`} style={{ height: `${height}%` }} />
             ))}
           </div>
-          <span className="wave-label">SCROLL TO DECODE</span>
         </div>
       </section>
 
       <section className="fields-section" id="fields" aria-labelledby="fields-heading">
-        <div className="section-index">
-          <span>01</span>
-          <p>FIELDS OF PRACTICE</p>
-          <i aria-hidden="true" />
-        </div>
         <div className="fields-intro">
-          <div>
-            <p className="eyebrow"><span aria-hidden="true" />终生学习 / LIFELONG LEARNING</p>
-            <h2 id="fields-heading">终生<br /><em>学习.</em></h2>
-          </div>
-          <div className="fields-intro-copy">
-            <p>把好奇心变成长期实践：理解世界、分享知识、持续构建，并保持开放。</p>
-            <p>Turn curiosity into a lifelong practice: understand, share, build, and stay open.</p>
-          </div>
+          <h2 id="fields-heading">{copy.fieldsHeading.lead}<em>{copy.fieldsHeading.accent}</em></h2>
         </div>
 
         <div className="field-stack">
-          {fields.map((field) => (
-            <article className="field-slab" key={field.index}>
-              <div className="field-number">{field.index}</div>
+          {copy.fields.map((field) => (
+            <article className="field-slab" key={field.name}>
               <div className="field-main">
-                <p>{field.eyebrow}</p>
                 <h3>{field.name}</h3>
               </div>
               <div className="field-copy">
                 <p>{field.copy}</p>
-                <span>{field.detail}</span>
+                {field.project && field.href ? (
+                  <a className="field-project" href={field.href} target="_blank" rel="noreferrer">
+                    {field.project} <span aria-hidden="true">↗</span>
+                  </a>
+                ) : null}
               </div>
-              <a className="field-project" href={field.href} target="_blank" rel="noreferrer">
-                <span>PROJECT / {field.project}</span>
-                <strong>{field.url} ↗</strong>
-              </a>
-              <b aria-hidden="true">{field.mark}</b>
             </article>
           ))}
         </div>
       </section>
 
       <section className="archive-section" id="archive" aria-labelledby="archive-heading">
-        <div className="section-index">
-          <span>02</span>
-          <p>OPEN ARCHIVE</p>
-          <i aria-hidden="true" />
-        </div>
         <div className="archive-heading">
-          <div>
-            <p className="eyebrow"><span aria-hidden="true" />PINNED PROJECTS / 07</p>
-            <h2 id="archive-heading">OPEN<br /><em>ARCHIVE.</em></h2>
-          </div>
+          <h2 id="archive-heading">{copy.archiveHeading}</h2>
           <div className="archive-heading-copy">
-            <p>Seven public artifacts. One continuous practice.</p>
-            <a href="https://github.com/amazingang" target="_blank" rel="noreferrer">VISIT @AMAZINGANG <span aria-hidden="true">↗</span></a>
+            <a href="https://github.com/amazingang" target="_blank" rel="noreferrer">GITHUB / @amazingang <span aria-hidden="true">↗</span></a>
           </div>
         </div>
 
         <div className="archive-group">
-          <div className="archive-group-label"><span>LEARNING SYSTEMS</span><span>04</span></div>
+          <div className="archive-group-label"><span>{copy.archiveGroups.learning}</span><span>04</span></div>
           <div className="archive-grid archive-grid-learning">
-            {learningProjects.map((project) => <ArchiveCard key={project.name} project={project} />)}
+            {copy.learningProjects.map((project) => <ArchiveCard key={project.name} project={project} starsLabel={copy.starsLabel} />)}
           </div>
         </div>
 
         <div className="archive-group">
-          <div className="archive-group-label"><span>PERSONAL SYSTEMS</span><span>03</span></div>
+          <div className="archive-group-label"><span>{copy.archiveGroups.personal}</span><span>03</span></div>
           <div className="archive-grid archive-grid-personal">
-            {personalProjects.map((project) => <ArchiveCard key={project.name} project={project} />)}
+            {copy.personalProjects.map((project) => <ArchiveCard key={project.name} project={project} starsLabel={copy.starsLabel} />)}
           </div>
         </div>
       </section>
 
-      <section className="transmit-section" id="transmit" aria-labelledby="transmit-heading">
+      <section className="transmit-section" id="connect" aria-labelledby="transmit-heading">
         <div className="transmit-shell">
           <div className="transmit-grid" aria-hidden="true" />
-          <div className="transmit-index" aria-hidden="true">03</div>
           <div className="transmit-copy">
-            <p className="eyebrow"><span aria-hidden="true" />THE NODE IS OPEN</p>
-            <h2 id="transmit-heading">MAKE<br /><em>A SIGNAL.</em></h2>
-            <p>新的作品、想法与连接，持续发射。</p>
-            <p>New work, ideas, and connections—still transmitting.</p>
+            <h2 id="transmit-heading">{copy.connectHeading}</h2>
           </div>
           <div className="transmit-links">
-            <a href="https://github.com/amazingang" target="_blank" rel="noreferrer"><span>GITHUB</span><strong>@amazingang</strong><i aria-hidden="true">↗</i></a>
+            <a href="https://github.com/amazingang" target="_blank" rel="noreferrer"><span>{copy.profileLabels.github}</span><strong>@amazingang</strong><i aria-hidden="true">↗</i></a>
             <a href="https://x.com/0xAA_Science" target="_blank" rel="noreferrer"><span>X</span><strong>@0xAA_Science</strong><i aria-hidden="true">↗</i></a>
-            <button type="button" onClick={triggerPulse}><span>FIELD</span><strong>RE-IGNITE</strong><i aria-hidden="true">✦</i></button>
-          </div>
-          <div className="transmit-wave" aria-hidden="true">
-            {pulseBars.slice(0, 28).map((height, index) => (
-              <span key={`${height}-transmit-${index}`} style={{ height: `${height}%` }} />
-            ))}
+            <a href="https://scholar.google.com/citations?user=raXwI1QAAAAJ&hl=en" target="_blank" rel="noreferrer"><span>{copy.profileLabels.scholar}</span><strong>{copy.profileLabels.publications}</strong><i aria-hidden="true">↗</i></a>
           </div>
         </div>
       </section>
 
       <footer className="monolith-footer">
-        <span>© 0xAA / MONOLITH_01</span>
-        <span>COMPUTATIONAL NEUROSCIENCE · OPEN SYSTEMS</span>
-        <button type="button" onClick={triggerPulse}>REBOOT THE NODE ↺</button>
+        <span>© 0xAA</span>
       </footer>
     </main>
   );
