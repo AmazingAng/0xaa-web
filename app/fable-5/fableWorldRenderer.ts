@@ -329,9 +329,12 @@ export const createFableWorldRenderer = (
     body.scale.set(width, height, 1.6);
     body.position.set(x + width / 2, top - height / 2, 0);
     scene.add(body);
+    // The gold strip must protrude past the body on every axis: coplanar
+    // faces (e.g. both top faces at y = top) z-fight and make the floor
+    // flicker as the camera moves.
     const strip = new THREE.Mesh(unitBox, goldStripMaterial);
-    strip.scale.set(width, 0.06, 1.66);
-    strip.position.set(x + width / 2, top - 0.03, 0.02);
+    strip.scale.set(width + 0.04, 0.06, 1.7);
+    strip.position.set(x + width / 2, top + 0.005, 0);
     scene.add(strip);
   };
   for (const segment of GROUND_SEGMENTS) addPlatform(segment.x, segment.y, segment.width, segment.height, true);
@@ -378,7 +381,9 @@ export const createFableWorldRenderer = (
     signMeshes.push(mesh);
     const post = new THREE.Mesh(unitBox, slabMaterial);
     post.scale.set(0.14, sign.y, 0.14);
-    post.position.set(sign.x, sign.y / 2, -1.25);
+    // Keep the post fully behind the sign plane (z = -1.2) so it does not
+    // intersect the translucent board.
+    post.position.set(sign.x, sign.y / 2, -1.32);
     scene.add(post);
   }
 
