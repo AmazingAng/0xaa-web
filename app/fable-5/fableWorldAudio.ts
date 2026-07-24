@@ -1,14 +1,19 @@
-// Procedural WebAudio soundtrack for the Fable gate. No external audio
-// assets: a slow ambient drone underpins pentatonic chimes that climb with
-// each ignited synapse, so progress is audible as a rising melody.
+// Procedural WebAudio for 0xAA WORLD. No audio assets ship with the site: an
+// ambient drone underpins short synthesized cues for jumping, coins, block
+// reveals, stomps, hurts, portals, and the finale fanfare.
 
-export type FableGateAudio = {
+export type FableWorldAudio = {
   start: () => Promise<boolean>;
   setMuted: (muted: boolean) => void;
-  cueIgnite: (chargeIndex: number) => void;
-  cueHit: () => void;
+  cueJump: () => void;
+  cueCoin: () => void;
+  cueBump: () => void;
+  cueReveal: (revealIndex: number) => void;
+  cueStomp: () => void;
+  cueHurt: () => void;
+  cueFall: () => void;
+  cuePortal: () => void;
   cueVictory: () => void;
-  cueFail: () => void;
   dispose: () => void;
 };
 
@@ -18,22 +23,25 @@ type WindowWithWebkitAudio = Window & {
   webkitAudioContext?: AudioContextConstructor;
 };
 
-// D major pentatonic, climbing across two octaves — one step per synapse.
-const IGNITE_SCALE_HZ = [
-  293.66, 329.63, 369.99, 440.0, 493.88, 587.33, 659.25, 739.99, 880.0, 987.77, 1174.66, 1318.51,
-];
+// D major pentatonic — block reveals climb this ladder as the run progresses.
+const REVEAL_SCALE_HZ = [293.66, 329.63, 369.99, 440.0, 493.88, 587.33, 659.25, 739.99, 880.0, 987.77];
 
 const CUE_COOLDOWNS_MS: Record<string, number> = {
-  ignite: 70,
-  hit: 220,
-  victory: 1200,
-  fail: 1200,
+  jump: 90,
+  coin: 50,
+  bump: 120,
+  reveal: 120,
+  stomp: 120,
+  hurt: 250,
+  fall: 400,
+  portal: 400,
+  victory: 1500,
 };
 
-export const createFableGateAudio = (): FableGateAudio => {
+export const createFableWorldAudio = (): FableWorldAudio => {
   let context: AudioContext | null = null;
   let master: GainNode | null = null;
-  let droneNodes: Array<OscillatorNode | AudioScheduledSourceNode> = [];
+  let droneNodes: AudioScheduledSourceNode[] = [];
   let muted = false;
   let disposed = false;
   const lastCueAt = new Map<string, number>();
@@ -75,19 +83,17 @@ export const createFableGateAudio = (): FableGateAudio => {
     master.gain.value = muted ? 0 : 0.5;
     master.connect(context.destination);
 
-    // Ambient drone: two slowly-beating sines through a breathing lowpass.
     const droneGain = context.createGain();
-    droneGain.gain.value = 0.055;
+    droneGain.gain.value = 0.045;
     const filter = context.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = 340;
+    filter.frequency.value = 320;
     const lfo = context.createOscillator();
-    lfo.frequency.value = 0.07;
+    lfo.frequency.value = 0.06;
     const lfoDepth = context.createGain();
-    lfoDepth.gain.value = 140;
+    lfoDepth.gain.value = 130;
     lfo.connect(lfoDepth);
     lfoDepth.connect(filter.frequency);
-
     for (const frequency of [73.42, 110.3, 146.83]) {
       const oscillator = context.createOscillator();
       oscillator.type = "sine";
@@ -108,30 +114,29 @@ export const createFableGateAudio = (): FableGateAudio => {
     frequency: number,
     {
       type = "triangle" as OscillatorType,
-      duration = 0.5,
-      peak = 0.16,
-      detune = 0,
+      duration = 0.4,
+      peak = 0.14,
       glideTo = 0,
+      delaySeconds = 0,
     } = {},
   ) => {
     if (!context || !master || muted) return;
-    const now = context.currentTime;
+    const at = context.currentTime + delaySeconds;
     const oscillator = context.createOscillator();
     oscillator.type = type;
-    oscillator.frequency.setValueAtTime(frequency, now);
-    if (glideTo > 0) oscillator.frequency.exponentialRampToValueAtTime(glideTo, now + duration);
-    oscillator.detune.value = detune;
+    oscillator.frequency.setValueAtTime(frequency, at);
+    if (glideTo > 0) oscillator.frequency.exponentialRampToValueAtTime(glideTo, at + duration);
     const envelope = context.createGain();
-    envelope.gain.setValueAtTime(0.0001, now);
-    envelope.gain.exponentialRampToValueAtTime(peak, now + 0.02);
-    envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    envelope.gain.setValueAtTime(0.0001, at);
+    envelope.gain.exponentialRampToValueAtTime(peak, at + 0.015);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, at + duration);
     oscillator.connect(envelope);
     envelope.connect(master);
-    oscillator.start(now);
-    oscillator.stop(now + duration + 0.05);
+    oscillator.start(at);
+    oscillator.stop(at + duration + 0.05);
   };
 
-  const playNoiseBurst = (duration = 0.22, centerHz = 240) => {
+  const playNoiseBurst = (duration = 0.2, centerHz = 240) => {
     if (!context || !master || muted) return;
     const now = context.currentTime;
     const length = Math.max(1, Math.floor(context.sampleRate * duration));
@@ -147,7 +152,7 @@ export const createFableGateAudio = (): FableGateAudio => {
     bandpass.frequency.value = centerHz;
     bandpass.Q.value = 0.9;
     const envelope = context.createGain();
-    envelope.gain.setValueAtTime(0.22, now);
+    envelope.gain.setValueAtTime(0.2, now);
     envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
     source.connect(bandpass);
     bandpass.connect(envelope);
@@ -163,28 +168,51 @@ export const createFableGateAudio = (): FableGateAudio => {
         master.gain.setTargetAtTime(nextMuted ? 0 : 0.5, context.currentTime, 0.05);
       }
     },
-    cueIgnite: (chargeIndex: number) => {
-      if (!cueAllowed("ignite")) return;
-      const note = IGNITE_SCALE_HZ[Math.min(Math.max(chargeIndex, 0), IGNITE_SCALE_HZ.length - 1)];
-      playTone(note, { duration: 0.55, peak: 0.15 });
-      playTone(note * 2, { duration: 0.3, peak: 0.05, detune: 6 });
+    cueJump: () => {
+      if (!cueAllowed("jump")) return;
+      playTone(330, { type: "square", duration: 0.16, peak: 0.05, glideTo: 620 });
     },
-    cueHit: () => {
-      if (!cueAllowed("hit")) return;
+    cueCoin: () => {
+      if (!cueAllowed("coin")) return;
+      playTone(1318.51, { duration: 0.16, peak: 0.08 });
+      playTone(1975.53, { duration: 0.24, peak: 0.06, delaySeconds: 0.07 });
+    },
+    cueBump: () => {
+      if (!cueAllowed("bump")) return;
+      playTone(196, { type: "square", duration: 0.12, peak: 0.06, glideTo: 130 });
+    },
+    cueReveal: (revealIndex: number) => {
+      if (!cueAllowed("reveal")) return;
+      const note = REVEAL_SCALE_HZ[Math.min(Math.max(revealIndex - 1, 0), REVEAL_SCALE_HZ.length - 1)];
+      playTone(note, { duration: 0.5, peak: 0.13 });
+      playTone(note * 1.5, { duration: 0.4, peak: 0.07, delaySeconds: 0.09 });
+      playTone(note * 2, { duration: 0.5, peak: 0.05, delaySeconds: 0.18 });
+    },
+    cueStomp: () => {
+      if (!cueAllowed("stomp")) return;
+      playTone(240, { type: "square", duration: 0.18, peak: 0.09, glideTo: 90 });
+      playNoiseBurst(0.12, 900);
+    },
+    cueHurt: () => {
+      if (!cueAllowed("hurt")) return;
       playNoiseBurst(0.24, 210);
-      playTone(160, { type: "sawtooth", duration: 0.3, peak: 0.07, glideTo: 62 });
+      playTone(180, { type: "sawtooth", duration: 0.3, peak: 0.07, glideTo: 66 });
+    },
+    cueFall: () => {
+      if (!cueAllowed("fall")) return;
+      playTone(520, { type: "triangle", duration: 0.6, peak: 0.09, glideTo: 110 });
+    },
+    cuePortal: () => {
+      if (!cueAllowed("portal")) return;
+      playTone(440, { duration: 0.5, peak: 0.09, glideTo: 880 });
+      playNoiseBurst(0.3, 1400);
     },
     cueVictory: () => {
-      if (!cueAllowed("victory") || !context) return;
-      const chord = [293.66, 369.99, 440.0, 587.33, 739.99];
-      chord.forEach((frequency, index) => {
-        window.setTimeout(() => playTone(frequency, { duration: 1.3, peak: 0.12 }), index * 105);
+      if (!cueAllowed("victory")) return;
+      const fanfare = [293.66, 369.99, 440.0, 587.33, 739.99, 880.0];
+      fanfare.forEach((frequency, index) => {
+        playTone(frequency, { duration: 1.1, peak: 0.11, delaySeconds: index * 0.1 });
       });
-    },
-    cueFail: () => {
-      if (!cueAllowed("fail")) return;
-      playTone(220, { duration: 0.9, peak: 0.1, glideTo: 110 });
-      playTone(261.63, { duration: 0.9, peak: 0.07, glideTo: 130.81 });
     },
     dispose: () => {
       disposed = true;

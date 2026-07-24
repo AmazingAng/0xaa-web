@@ -204,13 +204,15 @@ test("keeps model-specific home routes ready for comparison", async () => {
   assert.equal(fableResponse.status, 200);
   const fableHtml = await fableResponse.text();
   assert.match(fableHtml, /FABLE 5/);
-  // The Fable node now server-renders its own opening game gate.
-  assert.match(fableHtml, /突触绽放/);
-  assert.match(fableHtml, /初始化神经星云/);
+  // The Fable node server-renders the 0xAA WORLD platformer start screen.
+  assert.match(fableHtml, /0xAA WORLD/);
+  assert.match(fableHtml, /初始化世界/);
   assert.match(fableHtml, /声音(?:<!-- -->|\s)*开/);
+  assert.match(fableHtml, /阅读模式/);
   assert.match(fableHtml, /href="\/gpt-5-6-Terra"/);
   assert.match(fableHtml, /href="\/fable-5"/);
-  // Homepage content stays behind the Fable gate.
+  // Homepage card content is revealed in-game (or via reading mode), not in
+  // the server-rendered shell.
   assert.doesNotMatch(fableHtml, /WTF Academy/);
   assert.doesNotMatch(fableHtml, /class="fable-site"/);
 });
@@ -266,65 +268,86 @@ test("keeps the homepage content and external profiles behind the cleared gate",
   assert.match(fableHome, /const FablePortrait = dynamic\(\(\) => import\("\.\/FablePortrait"\), \{ ssr: false \}\)/);
 });
 
-test("keeps the Fable gate resource-bounded and dynamically isolated", async () => {
-  const [gate, renderer, audio, portrait, experience] = await Promise.all([
-    readFile(new URL("../app/fable-5/FableGate.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../app/fable-5/fableGateRenderer.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/fable-5/fableAudio.ts", import.meta.url), "utf8"),
+test("keeps 0xAA WORLD resource-bounded and dynamically isolated", async () => {
+  const [world, level, renderer, audio, portrait, experience] = await Promise.all([
+    readFile(new URL("../app/fable-5/FableWorld.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/fable-5/fableLevel.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/fable-5/fableWorldRenderer.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/fable-5/fableWorldAudio.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/fable-5/FablePortrait.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/fable-5/FableExperience.tsx", import.meta.url), "utf8"),
   ]);
 
-  // Simulation stays bounded and free of direct Three.js imports.
-  assert.match(gate, /const TARGET_CHARGE = 12/);
-  assert.match(gate, /const MAX_ACTIVE_SYNAPSES = 5/);
-  assert.match(gate, /const MAX_ACTIVE_NOISE = 4/);
-  assert.match(gate, /const MAX_TRANSFERS = 4/);
-  assert.match(gate, /const INVULN_SECONDS = 1\.2/);
-  assert.match(gate, /const MAX_SIM_DELTA = 0\.05/);
-  assert.match(gate, /const VICTORY_EXIT_DURATION = 620/);
-  assert.match(gate, /await import\("\.\/fableGateRenderer"\)|import\("\.\/fableGateRenderer"\)/);
-  assert.match(gate, /createFableGateAudio/);
-  assert.match(gate, /visibilitychange/);
-  assert.match(gate, /cancelAnimationFrame/);
-  assert.match(gate, /prefers-reduced-motion/);
-  assert.match(gate, /visualViewport/);
-  assert.doesNotMatch(gate, /from "three"|WebGLRenderer|new Image\(/);
+  // Platformer physics runs on a bounded fixed timestep with game-feel
+  // affordances, and never imports Three.js directly.
+  assert.match(world, /const GRAVITY = 34/);
+  assert.match(world, /const JUMP_VELOCITY = 12\.5/);
+  assert.match(world, /const COYOTE_SECONDS = 0\.09/);
+  assert.match(world, /const JUMP_BUFFER_SECONDS = 0\.12/);
+  assert.match(world, /const FIXED_STEP = 1 \/ 120/);
+  assert.match(world, /const MAX_STEPS_PER_FRAME = 6/);
+  assert.match(world, /const MAX_HEARTS = 3/);
+  assert.match(world, /const INVULN_SECONDS = 1\.5/);
+  assert.match(world, /const STOMP_BOUNCE_VELOCITY = 8\.5/);
+  assert.match(world, /import\("\.\/fableWorldRenderer"\)/);
+  assert.match(world, /createFableWorldAudio/);
+  assert.match(world, /visibilitychange/);
+  assert.match(world, /cancelAnimationFrame/);
+  assert.match(world, /prefers-reduced-motion/);
+  assert.match(world, /visualViewport/);
+  assert.match(world, /fable-touch-controls/);
+  assert.doesNotMatch(world, /from "three"|WebGLRenderer|new Image\(/);
 
-  // Renderer pools its objects and caps pixel ratio + frame rate.
+  // The level embeds the homepage: fields, projects with stars, profile
+  // portals, and the finale flag.
+  assert.match(level, /WTF Academy/);
+  assert.match(level, /WTF-Solidity/);
+  assert.match(level, /14,010 ★/);
+  assert.match(level, /auth2api/);
+  assert.match(level, /PolyWorld/);
+  assert.match(level, /xapi-cli/);
+  assert.match(level, /https:\/\/github\.com\/amazingang/);
+  assert.match(level, /https:\/\/x\.com\/0xAA_Science/);
+  assert.match(level, /https:\/\/scholar\.google\.com\/citations\?user=raXwI1QAAAAJ&hl=en/);
+  assert.match(level, /export const buildColliders/);
+  assert.match(level, /export const FLAG_X/);
+
+  // Renderer pools particles, caps pixel ratio, and draws text via canvas
+  // textures instead of shipping font or image assets.
   assert.match(renderer, /import \* as THREE from "three"/);
-  assert.match(renderer, /const SYNAPSE_POOL = 6/);
-  assert.match(renderer, /const NOISE_POOL = 4/);
-  assert.match(renderer, /const DUST_COUNT = 260/);
-  assert.match(renderer, /const BURST_COUNT = 72/);
-  assert.match(renderer, /const SOCKET_COUNT = 12/);
   assert.match(renderer, /const PIXEL_RATIO_CAP = 1\.25/);
   assert.match(renderer, /const MOBILE_PIXEL_RATIO_CAP = 1/);
-  assert.match(renderer, /const GATE_RENDER_RATE = 45/);
+  assert.match(renderer, /const DUST_COUNT = 420/);
+  assert.match(renderer, /const TRAIL_COUNT = 30/);
+  assert.match(renderer, /const BURST_COUNT = 90/);
+  assert.match(renderer, /CanvasTexture/);
+  assert.match(renderer, /wrapText/);
   assert.match(renderer, /powerPreference: "low-power"/);
   assert.match(renderer, /renderer\.dispose/);
   assert.match(renderer, /renderer\.forceContextLoss/);
+  assert.match(renderer, /setLanguage/);
   assert.doesNotMatch(renderer, /TextureLoader|EffectComposer|PointLight/);
 
   // Procedural audio only — no shipped audio files.
-  assert.match(audio, /export const createFableGateAudio/);
+  assert.match(audio, /export const createFableWorldAudio/);
   assert.match(audio, /CUE_COOLDOWNS_MS/);
   assert.match(audio, /AudioContext/);
   assert.match(audio, /setMuted/);
   assert.match(audio, /dispose/);
   assert.doesNotMatch(audio, /new Audio\(|\.mp3|\.wav|\.ogg/);
 
-  // The Fable portrait reuses the precomputed point-cloud binaries.
+  // The reading-mode portrait reuses the precomputed point-cloud binaries.
   assert.match(portrait, /from "\.\.\/generated\/portrait-points\.meta\.json"/);
   assert.match(portrait, /fetch\(/);
   assert.match(portrait, /prefers-reduced-motion/);
   assert.match(portrait, /forceContextLoss/);
   assert.doesNotMatch(portrait, /getImageData|new Image\(|0xaa\.png/);
 
-  // The gate persists per-session and shares the language preference.
-  assert.match(experience, /0xaa:fable-gate-cleared/);
+  // Game and reading modes share the language preference; reduced-motion
+  // visitors default to reading mode.
   assert.match(experience, /0xaa:lang/);
-  assert.match(experience, /sessionStorage/);
+  assert.match(experience, /0xaa:fable-mode/);
+  assert.match(experience, /prefers-reduced-motion/);
 });
 
 test("keeps the Three.js opening game resource-bounded and dynamically isolated", async () => {

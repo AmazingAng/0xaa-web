@@ -1,35 +1,39 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import FableGate, { type FableGateLanguage } from "./FableGate";
 import FableHome from "./FableHome";
+import FableWorld, { type FableWorldLanguage } from "./FableWorld";
 
-const FABLE_GATE_CLEARED_KEY = "0xaa:fable-gate-cleared";
 const LANGUAGE_KEY = "0xaa:lang";
+const MODE_KEY = "0xaa:fable-mode";
+
+type ExperienceMode = "game" | "read";
 
 export default function FableExperience() {
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [mode, setMode] = useState<ExperienceMode>("game");
+  const [language, setLanguage] = useState<FableWorldLanguage>("zh");
   const [isRevealed, setIsRevealed] = useState(false);
-  const [language, setLanguage] = useState<FableGateLanguage>("zh");
 
-  // Restore the cleared gate and the shared language preference after
-  // hydration; storage is unavailable during SSR.
+  // Restore the shared language preference and the chosen mode after
+  // hydration; storage and media queries are unavailable during SSR. Users
+  // who prefer reduced motion start in reading mode unless they explicitly
+  // chose the game before.
   useEffect(() => {
+    let savedMode: string | null = null;
     try {
+      savedMode = window.localStorage.getItem(MODE_KEY);
       const savedLanguage = window.localStorage.getItem(LANGUAGE_KEY);
       if (savedLanguage === "zh" || savedLanguage === "en") {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- restoring persisted state after hydration, not a derived-state anti-pattern
         setLanguage(savedLanguage);
       }
     } catch {
-      // localStorage unavailable — keep the default language.
+      // Storage unavailable — keep defaults.
     }
-    try {
-      if (window.sessionStorage.getItem(FABLE_GATE_CLEARED_KEY) === "1") {
-        setIsUnlocked(true);
-      }
-    } catch {
-      // sessionStorage unavailable — replay the gate.
+    if (savedMode === "read" || savedMode === "game") {
+      setMode(savedMode);
+    } else if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setMode("read");
     }
   }, []);
 
@@ -43,7 +47,7 @@ export default function FableExperience() {
   }, [language]);
 
   useEffect(() => {
-    if (!isUnlocked) return;
+    if (mode !== "read") return;
     let revealFrame: number | null = null;
     const mountFrame = window.requestAnimationFrame(() => {
       revealFrame = window.requestAnimationFrame(() => setIsRevealed(true));
@@ -52,21 +56,33 @@ export default function FableExperience() {
       window.cancelAnimationFrame(mountFrame);
       if (revealFrame !== null) window.cancelAnimationFrame(revealFrame);
     };
-  }, [isUnlocked]);
+  }, [mode]);
 
-  const unlock = useCallback(() => {
-    try {
-      window.sessionStorage.setItem(FABLE_GATE_CLEARED_KEY, "1");
-    } catch {
-      // Ignore write failures — the gate will just replay next visit.
-    }
+  const persistMode = useCallback((next: ExperienceMode) => {
+    setMode(next);
     setIsRevealed(false);
-    setIsUnlocked(true);
+    try {
+      window.localStorage.setItem(MODE_KEY, next);
+    } catch {
+      // Ignore write failures.
+    }
   }, []);
 
-  if (!isUnlocked) {
-    return <FableGate onComplete={unlock} language={language} onLanguageChange={setLanguage} />;
+  const switchToReading = useCallback(() => persistMode("read"), [persistMode]);
+  const switchToGame = useCallback(() => persistMode("game"), [persistMode]);
+
+  if (mode === "game") {
+    return (
+      <FableWorld language={language} onLanguageChange={setLanguage} onSwitchToReading={switchToReading} />
+    );
   }
 
-  return <FableHome language={language} onLanguageChange={setLanguage} isRevealed={isRevealed} />;
+  return (
+    <FableHome
+      language={language}
+      onLanguageChange={setLanguage}
+      isRevealed={isRevealed}
+      onEnterGame={switchToGame}
+    />
+  );
 }

@@ -2,11 +2,11 @@
 
 import dynamic from "next/dynamic";
 import ModelSwitcher from "../ModelSwitcher";
-import type { FableGateLanguage } from "./FableGate";
+import type { FableWorldLanguage } from "./FableWorld";
 
 const FablePortrait = dynamic(() => import("./FablePortrait"), { ssr: false });
 
-type Language = FableGateLanguage;
+type Language = FableWorldLanguage;
 
 type FableField = {
   name: string;
@@ -28,6 +28,7 @@ type FableCopy = {
   navigationLabel: string;
   languageLabel: string;
   switcherLabel: string;
+  gameMode: string;
   navigation: { fields: string; projects: string; connect: string };
   hero: {
     kicker: string;
@@ -55,6 +56,7 @@ const fableCopy: Record<Language, FableCopy> = {
     navigationLabel: "页面导航",
     languageLabel: "选择语言",
     switcherLabel: "切换模型主页",
+    gameMode: "游戏模式",
     navigation: { fields: "卷一 · 领域", projects: "卷二 · 项目", connect: "卷三 · 联系" },
     hero: {
       kicker: "0xAA / 一则未写完的寓言",
@@ -103,6 +105,7 @@ const fableCopy: Record<Language, FableCopy> = {
     navigationLabel: "Page navigation",
     languageLabel: "Choose language",
     switcherLabel: "Switch model pages",
+    gameMode: "GAME MODE",
     navigation: { fields: "I · FIELDS", projects: "II · PROJECTS", connect: "III · CONNECT" },
     hero: {
       kicker: "0xAA / AN UNFINISHED FABLE",
@@ -169,9 +172,10 @@ export type FableHomeProps = {
   language: Language;
   onLanguageChange: (language: Language) => void;
   isRevealed: boolean;
+  onEnterGame?: () => void;
 };
 
-export default function FableHome({ language, onLanguageChange, isRevealed }: FableHomeProps) {
+export default function FableHome({ language, onLanguageChange, isRevealed, onEnterGame }: FableHomeProps) {
   const copy = fableCopy[language];
 
   return (
@@ -196,6 +200,11 @@ export default function FableHome({ language, onLanguageChange, isRevealed }: Fa
           <a href="https://x.com/0xAA_Science" target="_blank" rel="noreferrer">X ↗</a>
           <a href="https://scholar.google.com/citations?user=raXwI1QAAAAJ&hl=en" target="_blank" rel="noreferrer">SCHOLAR ↗</a>
           <ModelSwitcher activeModel="fable-5" label={copy.switcherLabel} />
+          {onEnterGame ? (
+            <button type="button" className="fable-reading-toggle" onClick={onEnterGame}>
+              {copy.gameMode} <span aria-hidden="true">✦</span>
+            </button>
+          ) : null}
           <div className="fable-language-switch" role="group" aria-label={copy.languageLabel}>
             <button type="button" aria-pressed={language === "zh"} data-active={language === "zh"} onClick={() => onLanguageChange("zh")}>
               中
