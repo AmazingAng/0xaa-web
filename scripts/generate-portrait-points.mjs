@@ -11,7 +11,7 @@ const projectRoot = resolve(scriptDirectory, "..");
 // point cloud, never image pixels.
 const sourcePath = resolve(projectRoot, "static/0xaa-particle-reference.png");
 const metaOutputPath = resolve(projectRoot, "app/generated/portrait-points.meta.json");
-const binOutputPath = resolve(projectRoot, "public/portrait-points.bin");
+const publicDirectory = resolve(projectRoot, "public");
 const crop = { x: 505, y: 50, width: 660, height: 830 };
 const sampleStep = 1;
 const desktopCount = 30_000;
@@ -170,11 +170,24 @@ selected.forEach(({ point }, pointIndex) => {
   }
 });
 
-const sourceHash = createHash("sha256")
-  .update(sourceBuffer)
-  .update(JSON.stringify({ crop, sampleStep, desktopCount, mobileCount }))
-  .digest("hex")
-  .slice(0, 16);
+// The mobile selection is deliberately first in `selected`, so it can share
+// the exact same quantization channels as the desktop cloud while shipping a
+// smaller prefix payload for mobile clients.
+const mobileBin = bin.subarray(0, mobile.length * pointStride * 2);
+const contentHash = (payload) => createHash("sha256").update(payload).digest("hex").slice(0, 16);
+
+// Keep content hashes in metadata for integrity checks and use them in the
+// emitted pathnames. Sampling, quantization, and encoding changes therefore
+// produce new immutable asset URLs rather than reusing a mutable response.
+const sourceHash = contentHash(bin);
+const mobileHash = contentHash(mobileBin);
+// Put the content hash in the pathname, rather than only a query parameter.
+// Public assets are otherwise served from a stable pathname, which could let
+// an older page decode a newer point cloud during a rolling deployment.
+const desktopAssetName = `portrait-points.${sourceHash}.bin`;
+const mobileAssetName = `portrait-points.mobile.${mobileHash}.bin`;
+const binOutputPath = resolve(publicDirectory, desktopAssetName);
+const mobileBinOutputPath = resolve(publicDirectory, mobileAssetName);
 
 const meta = {
   version: 2,
@@ -187,13 +200,19 @@ const meta = {
   count: selected.length,
   sourceHash,
   channels,
-  bin: "/portrait-points.bin",
+  bin: `/${desktopAssetName}`,
+  mobileHash,
+  mobileBin: `/${mobileAssetName}`,
 };
 
 await mkdir(dirname(metaOutputPath), { recursive: true });
-await mkdir(dirname(binOutputPath), { recursive: true });
+await mkdir(publicDirectory, { recursive: true });
+// Intentionally do not clean older public/portrait-points*.bin files. A page
+// already running an earlier client bundle must be able to finish loading the
+// binary named by its embedded meta after a newer deployment is live.
 await writeFile(metaOutputPath, `${JSON.stringify(meta)}\n`);
 await writeFile(binOutputPath, bin);
+await writeFile(mobileBinOutputPath, mobileBin);
 console.log(
-  `Generated ${selected.length} portrait points -> ${metaOutputPath} (meta) + ${binOutputPath} (${bin.length} bytes)`,
+  `Generated ${selected.length} portrait points -> ${metaOutputPath} (meta) + ${binOutputPath} (${bin.length} bytes) + ${mobileBinOutputPath} (${mobileBin.length} bytes)`,
 );

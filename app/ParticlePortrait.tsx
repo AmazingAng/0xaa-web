@@ -21,6 +21,8 @@ type PointCloudMeta = {
   sourceHash: string;
   channels: PointCloudChannel[];
   bin: string;
+  mobileHash?: string;
+  mobileBin?: string;
 };
 
 type ParticlePortraitProps = {
@@ -42,6 +44,8 @@ const isUsablePointCloudMeta = (meta: PointCloudMeta) =>
   meta.lod.desktop >= meta.lod.mobile &&
   Number.isInteger(meta.count) &&
   meta.count >= meta.lod.desktop &&
+  typeof meta.sourceHash === "string" &&
+  meta.sourceHash.length > 0 &&
   typeof meta.bin === "string" &&
   meta.bin.length > 0 &&
   Array.isArray(meta.channels) &&
@@ -52,18 +56,87 @@ const isUsablePointCloudMeta = (meta: PointCloudMeta) =>
 
 const hasUsablePointCloudMeta = isUsablePointCloudMeta(pointCloudMeta);
 
-// Dequantizes the fetched Uint16 binary buffer into a flat Float32Array of
-// `count * stride` values, applying each channel's stored min/range.
-const dequantizePoints = (buffer: ArrayBuffer, meta: PointCloudMeta): Float32Array | null => {
-  const quantized = new Uint16Array(buffer);
-  const expectedLength = meta.count * meta.stride;
-  if (quantized.length < expectedLength) return null;
+type PointCloudAsset = {
+  bin: string;
+  // Points decoded and drawn from this asset.
+  pointCount: number;
+  // Points physically stored in the binary. The desktop asset can contain
+  // more points than its active LOD, while the mobile asset is exact.
+  assetCount: number;
+};
 
-  const values = new Float32Array(expectedLength);
-  for (let index = 0; index < expectedLength; index += 1) {
+type PointCloudMetaWithMobileAsset = PointCloudMeta & {
+  mobileBin: string;
+};
+
+const hasMobilePointCloudAsset = (meta: PointCloudMeta): meta is PointCloudMetaWithMobileAsset =>
+  typeof meta.mobileBin === "string" &&
+  meta.mobileBin.length > 0;
+
+type NavigatorWithMobileHint = Navigator & {
+  userAgentData?: {
+    mobile?: boolean;
+  };
+};
+
+const mobileUserAgentPattern = /Android|iPhone|iPad|iPod|IEMobile|Windows Phone|BlackBerry|Opera Mini/i;
+
+// Prefer durable device signals over viewport width: a narrow desktop should
+// preserve the full cloud, while an iPad with a trackpad should still receive
+// the mobile asset. The final coarse-only branch covers touch-first devices
+// with unhelpful user agents without classifying touch-capable desktops that
+// also have a precise pointer as mobile.
+const isLikelyHandheldDevice = ({
+  primaryCoarse,
+  finePointer,
+}: {
+  primaryCoarse: boolean;
+  finePointer: boolean;
+}) => {
+  const browserNavigator = navigator as NavigatorWithMobileHint;
+  if (browserNavigator.userAgentData?.mobile === true) return true;
+
+  const iPadDesktopMode =
+    browserNavigator.platform === "MacIntel" && browserNavigator.maxTouchPoints > 1;
+  if (iPadDesktopMode || mobileUserAgentPattern.test(browserNavigator.userAgent)) return true;
+
+  return primaryCoarse && !finePointer && browserNavigator.maxTouchPoints > 0;
+};
+
+// Dequantizes the fetched Uint16 binary buffer into a flat Float32Array of
+// `pointCount * stride` values, applying each channel's stored min/range.
+// assetCount may be larger when an older deployment only ships the desktop bin.
+const dequantizePoints = (
+  buffer: ArrayBuffer,
+  meta: PointCloudMeta,
+  pointCount: number,
+  assetCount: number = pointCount,
+): Float32Array | null => {
+  if (
+    !Number.isInteger(pointCount) ||
+    !Number.isInteger(assetCount) ||
+    pointCount <= 0 ||
+    assetCount < pointCount
+  ) {
+    return null;
+  }
+
+  const expectedLength = assetCount * meta.stride;
+  const expectedBytes = expectedLength * Uint16Array.BYTES_PER_ELEMENT;
+  if (buffer.byteLength !== expectedBytes) return null;
+
+  // The generator writes Uint16 little-endian values. DataView keeps that
+  // byte-order contract explicit instead of depending on host endianness.
+  const quantized = new DataView(buffer);
+  const valueLength = pointCount * meta.stride;
+
+  const values = new Float32Array(valueLength);
+  for (let index = 0; index < valueLength; index += 1) {
     const channel = index % meta.stride;
     const { min, range } = meta.channels[channel];
-    values[index] = min + (quantized[index] / QUANTIZED_MAX) * range;
+    values[index] =
+      min +
+      (quantized.getUint16(index * Uint16Array.BYTES_PER_ELEMENT, true) / QUANTIZED_MAX) * range;
   }
 
   return values.every(Number.isFinite) ? values : null;
@@ -198,6 +271,7 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     const abortController = new AbortController();
     const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
     const finePointerMedia = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const coarsePointerMedia = window.matchMedia("(pointer: coarse)");
     let reducedMotion = reducedMotionMedia.matches;
     let finePointer = finePointerMedia.matches;
     let disposed = false;
@@ -213,6 +287,25 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     let pulseStartedAt: number | null = null;
     const pulseDuration = 920;
     const portraitAspect = pointCloudMeta.aspectRatio || fallbackAspectRatio;
+    const desktopAsset: PointCloudAsset = {
+      bin: pointCloudMeta.bin,
+      pointCount: pointCloudMeta.lod.desktop,
+      assetCount: pointCloudMeta.count,
+    };
+    const mobileAsset: PointCloudAsset | null = hasMobilePointCloudAsset(pointCloudMeta)
+      ? {
+          bin: pointCloudMeta.mobileBin,
+          pointCount: pointCloudMeta.lod.mobile,
+          assetCount: pointCloudMeta.lod.mobile,
+        }
+      : null;
+    const useMobileLod =
+      mobileAsset !== null &&
+      isLikelyHandheldDevice({
+        primaryCoarse: coarsePointerMedia.matches,
+        finePointer,
+      });
+    const initialAsset = useMobileLod && mobileAsset ? mobileAsset : desktopAsset;
 
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
@@ -243,22 +336,45 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     scene.add(cloud);
     renderer.setClearColor(0x000000, 0);
 
-    // The buffer attributes are allocated up front (their capacity is known
-    // from the meta JSON) but left zero-filled until the quantized .bin
-    // asset is fetched and dequantized below.
-    const capacity = Math.min(pointCloudMeta.lod.desktop, pointCloudMeta.count);
-    const positions = new Float32Array(capacity * 3);
-    const colors = new Float32Array(capacity * 3);
-    const sizes = new Float32Array(capacity);
-    const opacities = new Float32Array(capacity);
-    const phases = new Float32Array(capacity);
+    // Allocate only the selected device profile. If the mobile file cannot be
+    // used, these buffers are replaced once with the desktop profile after its
+    // payload has passed validation.
+    let activeCapacity = 0;
+    let positions = new Float32Array(0);
+    let colors = new Float32Array(0);
+    let sizes = new Float32Array(0);
+    let opacities = new Float32Array(0);
+    let phases = new Float32Array(0);
 
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
-    geometry.setAttribute("aOpacity", new THREE.BufferAttribute(opacities, 1));
-    geometry.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
-    geometry.setDrawRange(0, 0);
+    const replacePointAttributes = (nextCapacity: number) => {
+      const attributeNames = ["position", "color", "aSize", "aOpacity", "aPhase"] as const;
+      const previousAttributes = attributeNames
+        .map((attributeName) => geometry.getAttribute(attributeName))
+        .filter((attribute): attribute is THREE.BufferAttribute => attribute !== undefined);
+
+      for (const attributeName of attributeNames) {
+        geometry.deleteAttribute(attributeName);
+      }
+      for (const attribute of previousAttributes) {
+        attribute.dispose();
+      }
+
+      activeCapacity = nextCapacity;
+      positions = new Float32Array(activeCapacity * 3);
+      colors = new Float32Array(activeCapacity * 3);
+      sizes = new Float32Array(activeCapacity);
+      opacities = new Float32Array(activeCapacity);
+      phases = new Float32Array(activeCapacity);
+
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+      geometry.setAttribute("aOpacity", new THREE.BufferAttribute(opacities, 1));
+      geometry.setAttribute("aPhase", new THREE.BufferAttribute(phases, 1));
+      geometry.setDrawRange(0, 0);
+    };
+
+    replacePointAttributes(initialAsset.pointCount);
 
     const canRender = () => !disposed && dataLoaded && !contextLost && inViewport && !document.hidden;
 
@@ -267,8 +383,7 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     };
 
     const updateDrawRange = () => {
-      const count = window.innerWidth < 620 ? pointCloudMeta.lod.mobile : capacity;
-      geometry.setDrawRange(0, dataLoaded ? Math.min(count, capacity) : 0);
+      geometry.setDrawRange(0, dataLoaded ? activeCapacity : 0);
     };
 
     const resize = () => {
@@ -438,54 +553,83 @@ export default function ParticlePortrait({ pulseSequence }: ParticlePortraitProp
     igniteRef.current = ignite;
     resize();
 
-    // Fetch the quantized binary point cloud at runtime instead of bundling
-    // it statically. sourceHash is embedded as a query string to bust caches
-    // on redeploy since public/ assets aren't content-hashed on this stack.
-    const binUrl = `${pointCloudMeta.bin}?v=${pointCloudMeta.sourceHash}`;
-    fetch(binUrl, { signal: abortController.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error(`Failed to fetch point cloud asset (${response.status})`);
-        return response.arrayBuffer();
-      })
-      .then((buffer) => {
-        if (disposed) return;
+    // The generator writes content-hashed file paths into meta.bin and
+    // meta.mobileBin. Request those immutable paths directly rather than a
+    // query-string version of one mutable filename.
+    let mobileFallbackStarted = false;
+    const isAbortError = (error: unknown) =>
+      typeof error === "object" &&
+      error !== null &&
+      "name" in error &&
+      error.name === "AbortError";
 
-        const values = dequantizePoints(buffer, pointCloudMeta);
-        if (!values) throw new Error("Point cloud asset failed validation");
+    const uploadPoints = (values: Float32Array, asset: PointCloudAsset) => {
+      if (disposed || contextLost) return;
 
-        for (let index = 0; index < capacity; index += 1) {
-          const offset = index * pointCloudMeta.stride;
-          const point = index * 3;
-          positions[point] = values[offset] - 0.5;
-          positions[point + 1] = 0.5 - values[offset + 1];
-          positions[point + 2] = values[offset + 2];
-          colors[point] = values[offset + 5];
-          colors[point + 1] = values[offset + 5];
-          colors[point + 2] = values[offset + 5];
-          sizes[index] = values[offset + 3];
-          opacities[index] = values[offset + 4];
-          phases[index] = values[offset + 6];
+      if (activeCapacity !== asset.pointCount) {
+        replacePointAttributes(asset.pointCount);
+      }
+
+      for (let index = 0; index < activeCapacity; index += 1) {
+        const offset = index * pointCloudMeta.stride;
+        const point = index * 3;
+        positions[point] = values[offset] - 0.5;
+        positions[point + 1] = 0.5 - values[offset + 1];
+        positions[point + 2] = values[offset + 2];
+        colors[point] = values[offset + 5];
+        colors[point + 1] = values[offset + 5];
+        colors[point + 2] = values[offset + 5];
+        sizes[index] = values[offset + 3];
+        opacities[index] = values[offset + 4];
+        phases[index] = values[offset + 6];
+      }
+
+      geometry.attributes.position.needsUpdate = true;
+      geometry.attributes.color.needsUpdate = true;
+      geometry.attributes.aSize.needsUpdate = true;
+      geometry.attributes.aOpacity.needsUpdate = true;
+      geometry.attributes.aPhase.needsUpdate = true;
+      geometry.computeBoundingSphere();
+
+      dataLoaded = true;
+      updateDrawRange();
+      render();
+      requestFrame();
+      stateFrame = window.requestAnimationFrame(() => {
+        if (!disposed && !contextLost) setLoadState("ready");
+      });
+    };
+
+    const loadPointCloud = async (asset: PointCloudAsset, canFallbackToDesktop: boolean) => {
+      try {
+        const response = await fetch(asset.bin, { signal: abortController.signal });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch point cloud asset (${response.status})`);
         }
 
-        geometry.attributes.position.needsUpdate = true;
-        geometry.attributes.color.needsUpdate = true;
-        geometry.attributes.aSize.needsUpdate = true;
-        geometry.attributes.aOpacity.needsUpdate = true;
-        geometry.attributes.aPhase.needsUpdate = true;
-        geometry.computeBoundingSphere();
+        const buffer = await response.arrayBuffer();
+        if (disposed || contextLost) return;
 
-        dataLoaded = true;
-        updateDrawRange();
-        render();
-        requestFrame();
-        stateFrame = window.requestAnimationFrame(() => {
-          if (!disposed) setLoadState("ready");
-        });
-      })
-      .catch((error: unknown) => {
-        if (disposed || (error instanceof DOMException && error.name === "AbortError")) return;
+        // This validates the full payload byte length, even when an asset
+        // contains more points than its active draw range.
+        const values = dequantizePoints(buffer, pointCloudMeta, asset.pointCount, asset.assetCount);
+        if (!values) throw new Error("Point cloud asset failed validation");
+
+        uploadPoints(values, asset);
+      } catch (error: unknown) {
+        if (disposed || contextLost || isAbortError(error)) return;
+
+        if (canFallbackToDesktop && !mobileFallbackStarted) {
+          mobileFallbackStarted = true;
+          void loadPointCloud(desktopAsset, false);
+          return;
+        }
+
         setLoadState("unavailable");
-      });
+      }
+    };
+
+    void loadPointCloud(initialAsset, initialAsset === mobileAsset);
 
     return () => {
       disposed = true;
