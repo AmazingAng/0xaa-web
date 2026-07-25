@@ -700,6 +700,39 @@ a {
   gap: 1rem;
 }
 
+.header-game-button {
+  display: inline-flex;
+  gap: 0.38rem;
+  align-items: center;
+  min-height: 1.72rem;
+  padding: 0.22rem 0.48rem;
+  border: 1px solid var(--line-soft);
+  background: rgba(3, 4, 4, 0.72);
+  color: var(--silver);
+  font-family: var(--mono);
+  font-size: 0.51rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.header-game-button i {
+  color: var(--paper);
+  font-size: 0.62rem;
+  font-style: normal;
+  line-height: 1;
+}
+
+.header-game-button:hover,
+.header-game-button:focus-visible {
+  border-color: var(--paper);
+  background: rgba(243, 244, 242, 0.1);
+  color: var(--paper);
+  transform: translateY(-1px);
+}
+
 .model-switcher {
   position: relative;
   z-index: 12;
@@ -1242,11 +1275,11 @@ a {
 
 .fields-section,
 .archive-section {
-  padding-block: clamp(7rem, 14vw, 13rem);
+  padding-block: clamp(4.8rem, 8vw, 7.5rem);
 }
 
 .fields-intro {
-  margin-top: clamp(3rem, 7vw, 6.5rem);
+  margin-top: clamp(2.5rem, 4vw, 4rem);
 }
 
 .archive-heading {
@@ -1254,7 +1287,7 @@ a {
   grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.75fr);
   gap: clamp(3rem, 10vw, 12rem);
   align-items: end;
-  margin-top: clamp(3rem, 7vw, 6.5rem);
+  margin-top: clamp(2.5rem, 4vw, 4rem);
 }
 
 .fields-intro h2,
@@ -1263,7 +1296,7 @@ a {
   margin: 1rem 0 0;
   color: var(--paper);
   font-family: var(--display);
-  font-size: clamp(4.8rem, 10.5vw, 11rem);
+  font-size: clamp(4.4rem, 8vw, 8.8rem);
   font-weight: 650;
   line-height: 0.72;
   letter-spacing: -0.09em;
@@ -1279,18 +1312,18 @@ a {
 }
 
 .field-stack {
-  margin-top: clamp(4.5rem, 10vw, 9rem);
+  margin-top: clamp(2.6rem, 5vw, 4.8rem);
   border-top: 1px solid var(--line);
 }
 
 .field-slab {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(12rem, 0.85fr) minmax(16rem, 1.15fr);
-  gap: clamp(2rem, 6vw, 7rem);
+  grid-template-columns: minmax(14rem, 0.82fr) minmax(22rem, 1.18fr);
+  gap: clamp(1.5rem, 4vw, 4.5rem);
   align-items: start;
-  min-height: 14rem;
-  padding: clamp(1.5rem, 3vw, 2.3rem) clamp(0.9rem, 2vw, 1.7rem);
+  min-height: 9.7rem;
+  padding: clamp(1.35rem, 2.3vw, 1.85rem) clamp(0.9rem, 1.7vw, 1.35rem);
   overflow: hidden;
   border-bottom: 1px solid var(--line-soft);
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.028), transparent 30%);
@@ -1325,48 +1358,43 @@ a {
   z-index: 1;
 }
 
+.field-main {
+  display: flex;
+  gap: clamp(0.65rem, 1.3vw, 1.25rem);
+  align-items: baseline;
+}
+
+.field-index {
+  flex: 0 0 auto;
+  color: var(--smoke);
+  font-family: var(--mono);
+  font-size: 0.48rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
 .field-main h3 {
-  max-width: 20rem;
+  max-width: 22rem;
   margin: 0;
   color: var(--paper);
   font-family: var(--display);
-  font-size: clamp(2.7rem, 4.3vw, 5rem);
+  font-size: clamp(2.45rem, 3.45vw, 4.25rem);
   font-weight: 650;
   line-height: 0.8;
   letter-spacing: -0.075em;
 }
 
 .field-copy {
-  padding-top: 0.2rem;
+  display: block;
+  padding-top: 0.12rem;
 }
 
 .field-copy p {
-  max-width: 24rem;
+  max-width: 31rem;
   margin: 0;
   color: var(--silver);
   font-size: 0.94rem;
   line-height: 1.85;
-}
-
-.field-project {
-  display: inline-flex;
-  gap: 0.55rem;
-  margin-top: 1.4rem;
-  width: fit-content;
-  padding-bottom: 0.65rem;
-  border-bottom: 1px solid var(--line);
-  color: var(--silver);
-  font-family: var(--mono);
-  font-size: clamp(0.92rem, 1.15vw, 1.12rem);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  transition: color 180ms ease, border-color 180ms ease;
-}
-
-.field-project:hover,
-.field-project:focus-visible {
-  border-color: var(--paper);
-  color: var(--paper);
 }
 
 .archive-section {
@@ -1374,8 +1402,10 @@ a {
 }
 
 .archive-heading-copy {
+  display: grid;
+  gap: 1rem;
   align-self: end;
-  padding-bottom: 0.35rem;
+  padding-bottom: 0.1rem;
 }
 
 .archive-heading-copy a {
@@ -1389,12 +1419,27 @@ a {
   letter-spacing: 0.09em;
 }
 
+.archive-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.9rem;
+  color: var(--ash);
+  font-family: var(--mono);
+  font-size: 0.51rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.archive-metrics span + span {
+  color: var(--silver);
+}
+
 .archive-group {
-  margin-top: clamp(4.5rem, 9vw, 8rem);
+  margin-top: clamp(2.9rem, 5vw, 4.6rem);
 }
 
 .archive-group + .archive-group {
-  margin-top: clamp(5.5rem, 10vw, 9rem);
+  margin-top: clamp(3.5rem, 6vw, 5.5rem);
 }
 
 .archive-group-label {
@@ -1411,26 +1456,30 @@ a {
 
 .archive-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   margin-top: 1px;
   background: var(--line);
 }
 
 .archive-grid-learning .archive-card-featured {
-  grid-row: span 2;
+  grid-row: auto;
+}
+
+.archive-grid-open-source {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .archive-grid-personal {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .archive-card {
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 16rem;
-  padding: 1.2rem;
+  min-height: 12.25rem;
+  padding: 1rem;
   overflow: hidden;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.035), transparent 38%),
@@ -1448,8 +1497,8 @@ a {
 }
 
 .archive-card-featured {
-  min-height: 32rem;
-  padding: 1.45rem;
+  min-height: 12.25rem;
+  padding: 1rem;
 }
 
 .archive-card-grid {
@@ -1498,22 +1547,26 @@ a {
   margin: 0;
   color: var(--paper);
   font-family: var(--display);
-  font-size: clamp(2.3rem, 3.6vw, 4rem);
+  font-size: clamp(1.9rem, 2.45vw, 3rem);
   font-weight: 650;
   line-height: 0.82;
   letter-spacing: -0.075em;
 }
 
 .archive-card-featured h3 {
-  font-size: clamp(3.8rem, 6vw, 6.8rem);
+  font-size: clamp(2.15rem, 2.8vw, 3.3rem);
 }
 
 .archive-card-core > p {
   max-width: 19rem;
   margin: 0.85rem 0 0;
   color: var(--silver);
-  font-size: 0.8rem;
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 0.74rem;
   line-height: 1.65;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .archive-arrow {
@@ -1533,17 +1586,17 @@ a {
 }
 
 .transmit-section {
-  padding-bottom: clamp(6rem, 12vw, 11rem);
+  padding-bottom: clamp(4.5rem, 8vw, 7.5rem);
 }
 
 .transmit-shell {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.42fr);
-  gap: clamp(1.5rem, 5vw, 6rem);
+  grid-template-columns: minmax(13rem, 0.55fr) minmax(0, 1.45fr);
+  gap: clamp(1.5rem, 4vw, 4rem);
   align-items: end;
-  min-height: 18rem;
-  padding: clamp(2rem, 5vw, 4rem);
+  min-height: 11.5rem;
+  padding: clamp(1.55rem, 3.2vw, 2.7rem);
   overflow: hidden;
   border: 1px solid var(--line);
   background:
@@ -1572,13 +1625,25 @@ a {
 }
 
 .transmit-copy h2 {
-  font-size: clamp(3.6rem, 7vw, 7.5rem);
+  margin-top: 0.72rem;
+  font-size: clamp(3.25rem, 5vw, 5.8rem);
+}
+
+.transmit-kicker {
+  margin: 0;
+  color: var(--ash);
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
 }
 
 .transmit-links {
   display: grid;
-  gap: 0.8rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
   width: 100%;
+  background: var(--line);
 }
 
 .transmit-links a {
@@ -1587,13 +1652,13 @@ a {
   gap: 0.32rem 1rem;
   align-items: baseline;
   width: 100%;
-  padding: 0.95rem 0;
+  min-height: 7.15rem;
+  padding: 0.9rem;
   border: 0;
-  border-bottom: 1px solid var(--line);
-  background: transparent;
+  background: var(--obsidian);
   color: var(--silver);
   text-align: left;
-  transition: border-color 180ms ease, color 180ms ease;
+  transition: background 180ms ease, color 180ms ease;
 }
 
 .transmit-links span,
@@ -1624,7 +1689,7 @@ a {
 
 .transmit-links a:hover,
 .transmit-links a:focus-visible {
-  border-color: var(--paper);
+  background: var(--slab-raised);
   color: var(--paper);
 }
 
@@ -1700,12 +1765,16 @@ a {
     grid-template-columns: minmax(10rem, 0.85fr) minmax(13rem, 1.15fr);
   }
 
+  .archive-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .archive-card h3 {
-    font-size: clamp(2rem, 3.7vw, 3.2rem);
+    font-size: clamp(1.75rem, 3.1vw, 2.7rem);
   }
 
   .archive-card-featured h3 {
-    font-size: clamp(3.4rem, 6vw, 5.4rem);
+    font-size: clamp(2.1rem, 3.7vw, 3.2rem);
   }
 }
 
@@ -1873,12 +1942,7 @@ a {
     padding-top: 0.35rem;
   }
 
-  .field-project {
-    margin-top: 0.85rem;
-  }
-
-  .archive-grid,
-  .archive-grid-personal {
+  .archive-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1888,11 +1952,11 @@ a {
 
   .archive-card,
   .archive-card-featured {
-    min-height: 15rem;
+    min-height: 12rem;
   }
 
   .archive-card-featured h3 {
-    font-size: clamp(3.8rem, 15vw, 6.2rem);
+    font-size: clamp(2.7rem, 12vw, 4rem);
   }
 
   .transmit-shell {
@@ -1907,6 +1971,7 @@ a {
   }
 
   .transmit-links {
+    grid-template-columns: 1fr;
     max-width: 23rem;
   }
 
@@ -1927,7 +1992,7 @@ a {
     font-size: 0.53rem;
   }
 
-  .header-links > a:nth-of-type(3) {
+  .header-links > a {
     display: none;
   }
 
@@ -1950,7 +2015,7 @@ a {
 
   .fields-section,
   .archive-section {
-    padding-block: 6.2rem;
+    padding-block: 4.6rem;
   }
 
   .field-slab {
@@ -1970,7 +2035,7 @@ a {
   }
 
   .archive-card-featured h3 {
-    font-size: clamp(3.5rem, 15vw, 5rem);
+    font-size: clamp(2.4rem, 12vw, 3.6rem);
   }
 }
 

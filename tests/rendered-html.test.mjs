@@ -173,20 +173,21 @@ async function render(path = "/") {
   );
 }
 
-test("server-renders the signal-defense gate before the homepage", async () => {
+test("server-renders the homepage without the opening game gate", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
   assert.match(html, /<title>0xAA — Neural Monolith<\/title>/i);
-  assert.match(html, /0xAA 神经拦截器/);
-  assert.match(html, /初始化中/);
-  assert.match(html, /声音(?:<!-- -->|\s)*开/);
-  assert.match(html, /拖动 · 自动射击/);
+  assert.match(html, /WTF Academy/);
+  assert.match(html, /class="monolith-site/);
+  assert.match(html, /class="header-game-button"/);
   assert.doesNotMatch(html, /Computational Neuroscience Ph\.D\./);
-  assert.doesNotMatch(html, /WTF Academy/);
-  assert.doesNotMatch(html, /class="portrait-field"/);
+  assert.doesNotMatch(html, /0xAA 神经拦截器/);
+  assert.doesNotMatch(html, /初始化中/);
+  assert.doesNotMatch(html, /拖动 · 自动射击/);
+  assert.match(html, /class="portrait-field"/);
   assert.doesNotMatch(html, /class="portrait-particle-canvas"/);
   assert.doesNotMatch(html, /POINT CLOUD \/ INITIALIZING/);
   assert.doesNotMatch(html, /src="\/0xaa\.png"/);
@@ -199,7 +200,10 @@ test("keeps model-specific home routes ready for comparison", async () => {
   ]);
 
   assert.equal(gptResponse.status, 200);
-  assert.match(await gptResponse.text(), /0xAA 神经拦截器/);
+  const gptHtml = await gptResponse.text();
+  assert.match(gptHtml, /WTF Academy/);
+  assert.match(gptHtml, /class="monolith-site/);
+  assert.doesNotMatch(gptHtml, /0xAA 神经拦截器/);
 
   assert.equal(fableResponse.status, 200);
   const fableHtml = await fableResponse.text();
@@ -217,7 +221,7 @@ test("keeps model-specific home routes ready for comparison", async () => {
   assert.doesNotMatch(fableHtml, /class="fable-site"/);
 });
 
-test("keeps the homepage content and external profiles behind the cleared gate", async () => {
+test("keeps the homepage content available and opens the game from the header", async () => {
   const [page, globalsCss, modelSwitcher, gptRoute, fableRoute, fableHome] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
@@ -235,13 +239,23 @@ test("keeps the homepage content and external profiles behind the cleared gate",
   assert.match(page, /https:\/\/x\.com\/0xAA_Science/);
   assert.match(page, /https:\/\/scholar\.google\.com\/citations\?user=raXwI1QAAAAJ&hl=en/);
   assert.match(page, /const ParticlePortrait = dynamic\(\(\) => import\("\.\/ParticlePortrait"\), \{ ssr: false \}\)/);
+  assert.match(page, /const OpeningGame = dynamic\(\(\) => import\("\.\/OpeningGame"\), \{ ssr: false \}\)/);
   assert.match(page, /const \[language, setLanguage\] = useState<Language>\("zh"\)/);
-  assert.match(page, /<OpeningGame onComplete=\{unlockNode\} language=\{language\} onLanguageChange=\{setLanguage\} \/>/);
+  assert.match(page, /const \[isGameOpen, setIsGameOpen\] = useState\(false\)/);
+  assert.match(page, /className="header-game-button"/);
+  assert.match(page, /\{isGameOpen \? <OpeningGame onComplete=\{closeGame\} language=\{language\} onLanguageChange=\{setLanguage\} \/> : null\}/);
+  assert.doesNotMatch(page, /GATE_CLEARED_KEY/);
+  assert.doesNotMatch(page, /if \(!isUnlocked\) return/);
   assert.match(page, /home-reveal-curtain/);
   assert.match(page, /isHomeRevealed/);
   assert.match(page, /language-switch/);
   assert.match(page, /<ModelSwitcher/);
-  assert.match(page, /<p>\{field\.copy\}<\/p>\s*\{field\.project/);
+  assert.match(page, /<p>\{field\.copy\}<\/p>/);
+  assert.doesNotMatch(page, /field\.project/);
+  assert.match(page, /openSourceProjects/);
+  assert.match(page, /archiveGroups\.openSource/);
+  assert.match(page, /WTF\.ACADEMY/);
+  assert.match(page, /XAPI\.TO/);
   assert.doesNotMatch(page, /Computational Neuroscience Ph\.D\./);
   assert.doesNotMatch(page, /NODE_00 \/ NEURAL MONOLITH/);
   assert.doesNotMatch(page, /class="portrait-slab"/);

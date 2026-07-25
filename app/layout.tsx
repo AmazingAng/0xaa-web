@@ -16,10 +16,10 @@ export const metadata: Metadata = {
     url: "/",
     images: [
       {
-        url: "/og-monolith.jpg",
+        url: "/og.png",
         width: 1200,
         height: 630,
-        alt: "0xAA Neural Monolith",
+        alt: "0xAA — Neural Monolith particle portrait",
       },
     ],
   },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "0xAA — Neural Monolith",
     description: "A personal node for learning, intelligence, and open systems.",
-    images: ["/og-monolith.jpg"],
+    images: ["/og.png"],
     creator: "@0xAA_Science",
     site: "@0xAA_Science",
   },
